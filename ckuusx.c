@@ -44,6 +44,7 @@
 #else
 #ifdef MACOSX
 #define NOHTERMCAP
+#include <term.h>
 #endif /* MACOSX */
 #endif /* OPENBSD */
 #endif /* __bsdi__ */
