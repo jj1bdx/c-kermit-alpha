@@ -3,7 +3,7 @@
 #endif /* SSHTEST */
 
 #include "ckcsym.h"
-char *userv = "User Interface 9.0.314, 25 Apr 2017";
+char *userv = "User Interface 9.0.316, 06 Nov 2021";
 
 /*  C K U U S R --  "User Interface" for C-Kermit (Part 1)  */
 
@@ -14,7 +14,7 @@ char *userv = "User Interface 9.0.314, 25 Apr 2017";
     Jeffrey E Altman <jaltman@secure-endpoints.com>
       Secure Endpoints Inc., New York City
 
-  Copyright (C) 1985, 2017,
+  Copyright (C) 1985, 2021,
     Trustees of Columbia University in the City of New York.
     All rights reserved.  See the C-Kermit COPYING.TXT file or the
     copyright text in the ckcmai.c module for disclaimer and permissions.
@@ -34,7 +34,7 @@ char *userv = "User Interface 9.0.314, 25 Apr 2017";
   fopen, fgets, feof, (f)printf, argv/argc, etc.  Other functions that are
   likely to vary among different platforms -- like setting terminal modes or
   interrupts -- are invoked via calls to functions that are defined in the
-  system- dependent modules, ck?[ft]io.c.  The command line parser processes
+  platform-dependent modules, ck?[ft]io.c.  The command line parser processes
   any arguments found on the command line, as passed to main() via argv/argc.
   The interactive parser uses the facilities of the cmd package (developed for
   this program, but usable by any program).  Any command parser may be
@@ -93,6 +93,7 @@ char *userv = "User Interface 9.0.314, 25 Apr 2017";
 #include "ckcnet.h"			/* Network symbols */
 #include "ckuusr.h"
 #include "ckcxla.h"
+#include "ckuath.h"             /*AGN missing Kerberos prototypes 4-Nov-2021*/
 
 int g_fncact = -1;			/* Needed for NOICP builds */
 int noinit = 0;				/* Flag for skipping init file */

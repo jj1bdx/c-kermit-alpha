@@ -1,16 +1,15 @@
 /* ckcmai.c - Main program for C-Kermit plus some miscellaneous functions */
 
-#define EDITDATE  "19 Sep 2020"         /* Last edit date dd mmm yyyy */
-#define EDITNDATE "20200919"		/* Keep them in sync */
-/* Sat Sep 19 12:21:09 2020 */
+#define EDITDATE  "14 Nov 2021"         /* Last edit date dd mmm yyyy */
+#define EDITNDATE "20211114"		/* Keep them in sync */
+/* Sun Nov 14 15:30:08 2021 */
 
 /*
 FOR A NEW VERSION (development, alpha, beta, release candidate formal release):
   . Change the 3 dates just above;
-  . Change ck_cryear (copyright year) just below, if necessary;
+  . Change ck_cryear = "xxx"; (copyright year) just below, if necessary;
   . For test versions change ck_s_test and ck_s_tver (below) appropriately;
   . Change makefile CKVER and BUILDID definitions and timestamp at top.
-  . When year changes, change ck_cryear = "xxx";
 
 If the version number has changed, also:
   . Change sccsid[] (below);
@@ -47,7 +46,7 @@ If the version number has changed, also:
 #endif /* OS2 */
 #endif /* BETATEST */
 
-char * ck_cryear = "2020"; 		/* C-Kermit copyright year */
+char * ck_cryear = "2021"; 		/* C-Kermit copyright year */
 
 #ifndef MAC /* MAC = Kermit for MAC OS 6, 7, ... i.e. original Macintosh */
 /*
@@ -57,7 +56,7 @@ char * ck_cryear = "2020"; 		/* C-Kermit copyright year */
 #ifndef BETATEST
 #ifndef OS2                             /* UNIX, VMS, etc... (i.e. C-Kermit) */
 char *ck_s_test = "Alpha";		/* "Dev","Alpha","Beta","RC", or "" */
-char *ck_s_tver = "02";			/* Test version number */
+char *ck_s_tver = "05";			/* Test version number */
 #else  /* OS2 */
 char *ck_s_test = "";			/* (i.e. K95) */
 char *ck_s_tver = "";
@@ -1650,9 +1649,16 @@ cc_clean();                             /* This can't be right? */
 #endif /* NOCCTRAP */
 
 #ifdef TIMEH
+#ifdef MULTINET /*AGN 27-Oct-2021 time.h and Multinet clash*/
+/*    Under Multinet, the 5th parameter to select() */
+/*    is a "void" and not a "struct timeval", so */
+/*    use the Multinet include file instead */
+#include "multinet_root:[multinet.include.sys]time.h"
+#else
 /* This had to be added for NetBSD 6.1 - it might have "effects" elsewhere */
 /* Tue Sep  3 17:03:42 2013 */
 #include <time.h>
+#endif /* MULTINET */
 #endif /* TIMEH */
 
 #ifndef NOXFER
@@ -3240,11 +3246,8 @@ main(argc,argv) int argc; char **argv;
         char stackdata[256];
         unsigned int c = 1234, n;
         /* try to make a random unsigned int to feed srand() */
-#ifndef VMS
-	/* time.h and MultiNet do not get along */
-        c = time(NULL);
-#endif /* VMS */
-        c *= getpid();
+        c = time(NULL);                 /* Get current time */
+        c *= getpid();                  /* multiply it by our PID */
 	/* Referenced before set... DELIBERATELY */
         for (n = 0; n < sizeof(stackdata); n++) /* IGNORE WARNING */
 	  c += stackdata[n];		/* DELIBERATELY USED BEFORE SET */

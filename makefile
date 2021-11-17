@@ -1,8 +1,8 @@
 # makefile / Makefile / ckuker.mak / CKUKER.MAK
 #
-# Sat Sep 19 11:01:20 2020
-BUILDID=20200918
-CKVER= "9.0.305" # Alpha.02
+# Wed Oct  7 16:51:19 2020
+BUILDID=20201007
+CKVER= "9.0.305" # Alpha.03
 #
 # -- Makefile to build C-Kermit for UNIX and UNIX-like platforms --
 #
@@ -19,8 +19,8 @@ CKVER= "9.0.305" # Alpha.02
 # FTP:    ftp://ftp.kermitproject.org
 #
 # Note: Author is no longer at Columbia University or at the 115th Street
-# address effective 1 July 2011.  Even so, C-Kermit remains Copyright
-# Columbia U because that is where it was first written in 1985 and further
+# address as of 1 July 2011.  Even so, C-Kermit remains Copyright Columbia
+# University because that is where it was first written in 1985 and further
 # developed through mid-2011.
 #
 # Contributions from many others.  Special thanks to Jeff Altman for the
@@ -35,25 +35,25 @@ CKVER= "9.0.305" # Alpha.02
 # targets below (especially the linux target) inspect the environment and make
 # some decisions in the most portable way possible. The automated tools are
 # not used because (a) C-Kermit predates them, and (b) they are not portable
-# to all the platforms where C-Kermit must be (or once was) built, and (c) to
-# keep C-Kermit as independent as possible from external tools over which we
-# have no control.
+# to all the platforms where C-Kermit must be (or once was) built, (c) the
+# automated tools are always changing, and (d) to keep C-Kermit as independent
+# as possible from external tools over which we have no control.
 #
 # Most entries use the "xermit" target, which uses the select()-based CONNECT
-# module, ckucns.c.  The "wermit" target uses the original fork()-based CONNECT
-# module, ckucon.c, which has some drawbacks but was portable to every Unix
-# variant whether it had TCP/IP or not (select() is part of the TCP/IP
+# module, ckucns.c.  The "wermit" target uses the original fork()-based
+# CONNECT module, ckucon.c, which has some drawbacks but was portable to every
+# Unix variant whether it had TCP/IP or not (select() is part of the TCP/IP
 # library, which was not standard on older Unixes).  If your target still uses
 # the "wermit" target, please try substituting the "xermit" one and if it
-# works, let us know (mailto:kermit-support@columbia.edu).  When changing a
-# target over from wermit to xermit, also remove -DNOLOEARN.
+# works, let us know (mailto:fdc@columbia.edu).  When changing a target over
+# from wermit to xermit, also remove -DNOLOEARN.
 #
 # CAREFUL: Don't put the lowercase word "if", "define", or "end" as the first
 # word after the "#" comment introducer in the makefile, even if it is
 # separated by whitespace.  Some versions of "make" understand these as
 # directives.  Uppercase letters remove the danger, e.g. "# If you have..."
 # 
-# WARNING: This is a huge makefile.  Although this is less likely since the
+# WARNING: This is a huge makefile.  Although it is less likely since the
 # turn of the century, some "make" programs might run out of memory.  If this
 # happens to you, edit away the parts that do not apply to your platform and
 # try again.
@@ -2146,6 +2146,65 @@ macosx+krb5+openssl macosx10.5+krb5+openssl macosx10.6+krb5+openssl:
 	-DCKCPU=\"\\\"$${MACCPU}\\\"\" \
 	-funsigned-char -O $(KFLAGS)" \
 	"LIBS= $$HAVE_KRB5CONFIG -lssl -lcrypto -lpam -lncurses $(LIBS)"
+
+# Additional target "macos" by Tony Nicholson 4-Nov-2021.
+#
+# More recent macOS re-branded releases for Intel (x86_64) Sierra (10,12),
+# High Sierra (10,13), Mojave (10.14), Catalina (10.15), and Intel x86_64/ARM
+# Big Sur (11), Monterey (12)
+#
+# Apple's Clang C compiler reports many warnings that can safely be ignored -
+# so keep reporting the ones that may have not been detected by other
+# compilers by selectively disabling dangling-else, string-compare and
+# parentheses related warnings.
+#
+macos:
+	@MACOSNAME=`/usr/bin/sw_vers -productName`; \
+	MACOSV=`/usr/bin/sw_vers -productVersion`; \
+	echo Making C-Kermit $(CKVER) for $$MACOSNAME $$MACOSV... ; \
+	MACCPU=$$HOSTTYPE; \
+	HAVE_UTMPX=''; \
+	$(MAKE) CC=$(CC) CC2=$(CC2) xermit KTARGET=$${KTARGET:-$(@)} \
+	"CFLAGS=-Wno-dangling-else -Wno-string-compare -Wno-parentheses \
+	-Wno-pointer-sign -Wno-unused-value \
+	-DMACOSX10 -DMACOSX103 -DCK_NCURSES -DTCPSOCKET -DCKHTTP \
+	-DUSE_STRERROR -DUSE_NAMESER_COMPAT -DNOCHECKOVERFLOW -DFNFLOAT \
+	-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 $$HAVE_UTMPX \
+	-funsigned-char -DNODCLINITGROUPS \
+	-DNOUUCP -O -DHERALD=\"\\\" $${MACOSNAME} $${MACOSV}\\\"\" \
+	-DCKCPU=\"\\\"$${MACCPU}\\\"\" \
+	$(KFLAGS)" "LIBS= -lncurses -lresolv $(LIBS)"
+
+# Trialling using the Homebrew install of krb5 and openssl
+# (newer versions of macOS have dropped the Kerberos5 include
+# files and moved to LibreSSL).
+# NB: not yet working  **DON'T USE THIS TARGET**
+#
+macos+krb5+ssl macos+krb5+openssl:
+	@MACOSNAME=`/usr/bin/sw_vers -productName`; \
+	MACOSV=`/usr/bin/sw_vers -productVersion`; \
+	echo Making C-Kermit $(CKVER) for $$MACOSNAME $$MACOSV... ; \
+	MACCPU=$$HOSTTYPE; \
+	HAVE_UTMPX=''; \
+	IS_MACOSX103=''; \
+	HAVE_DES=''; \
+	if test -x ${HOMEBREW_PREFIX}/opt/krb5/bin/krb5-config ; \
+	then HAVE_KRB5CONFIG=`${HOMEBREW_PREFIX}/opt/krb5/bin/krb5-config \
+--libs krb5 gssapi` ; \
+	else HAVE_KRB5CONFIG='-lgssapi_krb5 -lkrb5 -lk5crypto \
+	-lcom_err -lresolv' ; fi; \
+	$(MAKE) CC=$(CC) CC2=$(CC2) xermit KTARGET=$${KTARGET:-$(@)} \
+	"CFLAGS=-Wno-dangling-else -DMACOSX10 $$IS_MACOSX103 -DCK_NCURSES \
+	-DTCPSOCKET -DUSE_STRERROR -DUSE_NAMESER_COMPAT -DNOCHECKOVERFLOW \
+	-DFNFLOAT -DCKHTTP -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 \
+	$$HAVE_UTMPX -DNODCLINITGROUPS -DCK_AUTHENTICATION -DCK_KERBEROS \
+	-DKRB5 -DZLIB -DCK_ENCRYPTION -DCK_CAST -DCK_SSL -DOPENSSL_098 \
+	$$HAVE_DES -DNOUUCP -DHERALD=\"\\\" $${MACOSNAME} $${MACOSV}\\\"\" \
+	-DCKCPU=\"\\\"$${MACCPU}\\\"\" \
+	$${K5INC} $${SSLINC} \
+	-funsigned-char -O $(KFLAGS)" \
+	"LIBS= $$HAVE_KRB5CONFIG $${SSLLIB} \
+-lssl -lcrypto -lpam -lncurses $(LIBS)"
 
 # End of Mac OS X Section
 
@@ -6096,9 +6155,20 @@ linuxp:
 #capable of accessing, sending, receiving, and managing long (> 2GB) files.
 #On 64-bit platforms, it does no harm.
 #
+# The first clause regarding errno is new to 9.0.305 Alpha.03 and is an
+# attempt to aid in the decision to include "extern int errno" in the source
+# files by supplying a symbol DCL_ERRNO if errno is not declared or defined
+# in any header files in the /usr/include tree.
+#
 linux gnu-linux:
 	@echo "Making C-Kermit for Linux..."; \
 	# Dummy comment \
+	DCL_ERRNO='-DDCL_ERRNO';  \
+	if egrep -r \
+	  "(int *errno|\#define *errno|\# *define *errno)" /usr/include/* \
+	  > /dev/null 2> /dev/null; \
+	then DCL_ERRNO=''; \
+	fi ; \
 	if test \
 	`grep grantpt /usr/include/*.h /usr/include/*.h | wc -l` -gt 0; \
 	  then if test -c /dev/ptmx; \
@@ -6164,12 +6234,6 @@ linux gnu-linux:
 	    HAVE_LOCKDEV=''; \
 	  fi; \
 	fi; \
-        NEEDCURSESPROTOTYPES=''; \
-        if -f /etc/issue; then \
-          if egrep "(Ubuntu|Debian)" /etc/issue > /dev/null; then \
-            NEEDCURSESPROTOTYPES='-DNEEDCURSESPROTOTYPES'; \
-          fi; \
-        fi; \
 	if grep __USE_LARGEFILE64 /usr/include/features.h > /dev/null; \
 	  then HAVE_LARGEFILES='-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64'; \
 	  else HAVE_LARGEFILES=''; \

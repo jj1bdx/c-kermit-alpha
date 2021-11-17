@@ -1,5 +1,29 @@
 C-KERMIT 9.0.305 ALPHA TESTING
 
+9.0.305 Alpha.05 14 Nov 2020
+
+New support for 1,500,000bps serial port speed for platforms that offer
+it.  Numerous adjustments to APIs, header files, and C compilers that
+changed out from under C-Kermit.  A file-transfer bug fixed that resulted in
+the truncation of the filename when using ultra-short packets.  Also a
+problem was fixed that occured when transferring any file that contained
+0xff bytes through an external Xmodem protocol.  Most notably we have
+successful builds on modern VMS operating system versions on various
+hardware platforms.
+
+9.0.305 Alpha.04 14 Sep 2020
+
+Improvements for VMS builds; most importantly the source-code Zip file 
+was fixed to include no carriage returns; one or more previous versions
+contained a mix of LF and CRLF format files, which was fatal for VMS.  Also
+included: about nine minor changes to address warnings from the VMS build.
+The Zip file for Alpha.04 was created by Zip 3.0 on NetBSD 9.0.
+
+
+9.0.305 Alpha.03 (not published)
+
+Some small changes involving errno, SSL ciphers, some declarations, etc.
+
 9.0.305 Alpha.02 19 Sep 2020
 
 No functional changes since last time, but about 30 compile-time warnings

@@ -9,12 +9,12 @@
     Jeffrey E Altman <jaltman@secure-endpoints.com>
       Secure Endpoints Inc., New York City
 
-  Copyright (C) 1985, 2020,
+  Copyright (C) 1985, 2021,
     Trustees of Columbia University in the City of New York.
     All rights reserved.  See the C-Kermit COPYING.TXT file or the
     copyright text in the ckcmai.c module for disclaimer and permissions.
     Last update:
-    Fri Sep 18 14:54:00 2020
+    Sat Nov  6 12:29:26 2021
 */
 
 /*
@@ -51,6 +51,7 @@ extern char * ckvmserrstr(unsigned long);
 _PROTOTYP(int vmsttyfd, (void) );
 #endif /* VMS */
 
+/* This section is only for Kermit 95 for MS Windows and IBM OS/2 */
 #ifdef OS2
 #ifndef NT
 #define INCL_NOPM
@@ -425,7 +426,8 @@ extern int
   npad, pkttim, bigrbsiz, bigsbsiz, keep, atcapr, autopar, bctr, bctu,
   crunched, ckdelay, ebq, ebqflg, pktlog, retrans, rpackets, rptflg, rptq,
   rtimo, spackets, spsiz, spsizf, spsizr, timeouts, fncact, fncnv, urpsiz,
-  wmax, wslotn, wslotr, fdispla, spmax, fnrpath, fnspath, crc16;
+  wmax, wslotn, wslotr, fdispla, spmax, fnrpath, fnspath;
+extern long crc16;
 #endif /* NOXFER */
 
 #ifdef OS2
@@ -10424,7 +10426,7 @@ fneval(fn,argp,argn,xp) char *fn, *argp[]; int argn; char * xp; {
 #endif /* UNIX */
           char abuf[16], *s;
           char ** ap = NULL;
-	  char workbuf[MAXPATHLEN];
+	  char workbuf[CKMAXPATH];
 	  int attrs = 9;		/* Number of attributes defined */
 	  int k = 0;			/* current attribute index */
 	  int i,j,n;
@@ -10450,7 +10452,7 @@ fneval(fn,argp,argn,xp) char *fn, *argp[]; int argn; char * xp; {
 	  }
 #endif /* UNIX */
 
-	  j = ckstrncpy(workbuf,bp[0],MAXPATHLEN); /* Strip any trailing '/' */
+	  j = ckstrncpy(workbuf,bp[0],CKMAXPATH); /* Strip any trailing '/' */
 	  if (workbuf[j-1] == '/') {
 	      workbuf[j-1] = NUL;
 	      makestr(&(bp[0]),workbuf);
@@ -10536,7 +10538,7 @@ fneval(fn,argp,argn,xp) char *fn, *argp[]; int argn; char * xp; {
 
 /* [jt] 2013/11/21:
  * K-95 doesn't have ziperm.  However, I have not read through this
- * code thoroughly, and this needs double checked to see if there are
+ * code thoroughly, and this needs to be double checked to see if there are
  * any side effects of commenting this out.
  */
 #ifdef CK_PERMS
@@ -10554,11 +10556,11 @@ fneval(fn,argp,argn,xp) char *fn, *argp[]; int argn; char * xp; {
 
 	  /* Element 6 - Size in bytes */
       
-#ifdef OS2 /* [jt] 2013/11/21 - K-95 doesn't have linkname */
-	  s = ckfstoa(z);
-#else
+#ifdef UNIX /* [fdc] 2021-09-14 only Unix has file links */
 	  s = zgfs_link ? ckitoa((int)strlen((char *)linkname)) : ckfstoa(z);
-#endif /* OS2 */
+#else
+	  s = ckfstoa(z);
+#endif /* UNIX */
 	  a_ptr[x][6] = NULL;
 	  makestr(&(a_ptr[x][6]),s);
 	  
@@ -13960,7 +13962,6 @@ nvlook(s) char *s; {
                       *p = NUL;         /* there */
                   }
               }
-#endif /* Not VMS */
 /*
   But if the result is just the one character, e.g. '/' in Unix, erase it
   because that's the root directory and obviously can't be used for temporary
@@ -13969,6 +13970,7 @@ nvlook(s) char *s; {
               if (vvbuf[0] == c && vvbuf[1] == NUL) {
                   vvbuf[0] = NUL;
               }
+#endif /* Not VMS */
         }
         makestr(&tempdir,p); /* Save result where we can find it next time */ 
         return(vvbuf);
@@ -14061,7 +14063,7 @@ nvlook(s) char *s; {
 
 #ifndef NOXFER
       case VN_CRC16:                    /* CRC-16 of most recent transfer */
-        sprintf(vvbuf,"%d",crc16);      /* SAFE */
+        sprintf(vvbuf,"%ld",crc16);     /* SAFE */
         return(vvbuf);
 #endif /* NOXFER */
 
