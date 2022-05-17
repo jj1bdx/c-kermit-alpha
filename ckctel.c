@@ -1,4 +1,4 @@
-char *cktelv = "Telnet support, 9.0.277, 06 Nov 2021";
+char *cktelv = "Telnet support, 9.0.279, 27 Jan 2022";
 #define CKCTEL_C
 
 int sstelnet = 0;                       /* Do server-side Telnet negotiation */
@@ -22,6 +22,7 @@ int sstelnet = 0;                       /* Do server-side Telnet negotiation */
     Trustees of Columbia University in the City of New York.
     All rights reserved.  See the C-Kermit COPYING.TXT file or the
     copyright text in the ckcmai.c module for disclaimer and permissions.
+    Latest update: 27 Jan 2022
 */
 
 /*
@@ -34,6 +35,14 @@ int sstelnet = 0;                       /* Do server-side Telnet negotiation */
 
 #include "ckcsym.h"
 #include "ckcdeb.h"
+
+#ifdef TIMEH
+#include <time.h>                       /* fdc 2012-12-17 */
+#else
+#ifdef SYSTIMH
+#include <sys/time.h>
+#endif  /* SYSTIMH */
+#endif  /* TIMEH */
 
 #ifdef TNCODE
 #include "ckcker.h"
@@ -4661,10 +4670,10 @@ tn_xdoop(z, echo, fn) CHAR z; int echo; int (*fn)();
 #ifdef CK_ENVIRONMENT
               case TELOPT_NEWENVIRON:   /* SB NEW-ENVIRON SEND */
                 {
-                  char request[6];      /* request it */
-                  sprintf(request,"%cUSER",TEL_ENV_VAR);        /* safe */
-                  tn_ssbopt(TELOPT_NEWENVIRON,TELQUAL_SEND,request,
-                            strlen(request));
+                  CHAR request[6];      /* request it */
+                  sprintf(request,"%cUSER",TEL_ENV_VAR); /* safe */
+                  tn_ssbopt(TELOPT_NEWENVIRON,TELQUAL_SEND,(CHAR *)request,
+                            strlen((CHAR *)request)); /* 2022-01-27 */
                   TELOPT_UNANSWERED_SB(TELOPT_NEWENVIRON)=1;
                 }
                 break;

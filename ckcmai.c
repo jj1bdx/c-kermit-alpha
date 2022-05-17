@@ -1,8 +1,8 @@
 /* ckcmai.c - Main program for C-Kermit plus some miscellaneous functions */
 
-#define EDITDATE  "15 Dec 2021"         /* Last edit date dd mmm yyyy */
-#define EDITNDATE "20211215"		/* Keep them in sync */
-/* Wed Dec 15 13:46:53 2021 */
+#define EDITDATE  "16 May 2022"         /* Last edit date dd mmm yyyy */
+#define EDITNDATE "20220516"		/* Keep them in sync */
+/* Mon May 16 11:30:03 2022 */
 
 /*
 FOR A NEW VERSION (development, alpha, beta, release candidate formal release):
@@ -14,6 +14,7 @@ FOR A NEW VERSION (development, alpha, beta, release candidate formal release):
 If the version number has changed, also:
   . Change sccsid[] (below);
   . Change ck_s_ver, ck_l_ver, ck_s_xver, ck_l_xver (below).
+    (these are version numbers without Dev, Alpha, or Beta test ID)
 */
 /*
   ckcsym.h is used for defining symbols that normally would be defined
@@ -46,7 +47,7 @@ If the version number has changed, also:
 #endif /* OS2 */
 #endif /* BETATEST */
 
-char * ck_cryear = "2021"; 		/* C-Kermit copyright year */
+char * ck_cryear = "2022"; 		/* C-Kermit copyright year */
 
 #ifndef MAC /* MAC = Kermit for MAC OS 6, 7, ... i.e. original Macintosh */
 /*
@@ -55,8 +56,8 @@ char * ck_cryear = "2021"; 		/* C-Kermit copyright year */
 */
 #ifndef BETATEST
 #ifndef OS2                             /* UNIX, VMS, etc... (i.e. C-Kermit) */
-char *ck_s_test = "Alpha";		/* "Dev","Alpha","Beta","RC", or "" */
-char *ck_s_tver = "06";			/* Test version number */
+char *ck_s_test = "Beta";		/* "Dev","Alpha","Beta","RC", or "" */
+char *ck_s_tver = "01";			/* Test version number */
 #else  /* OS2 */
 char *ck_s_test = "";			/* (i.e. K95) */
 char *ck_s_tver = "";
@@ -79,10 +80,13 @@ char *ck_s_date = EDITDATE;		/* See top */
 char *buildid = EDITNDATE;		/* See top */
 
 #ifdef UNIX
-static char sccsid[] = "@(#)C-Kermit 9.0.305";
+static char sccsid[] = "@(#)C-Kermit 10.0";
 #endif /* UNIX */
 
 /*
+  As of C-Kermit 10.0, we no longer use major.minor.edit version number,
+  just major.minor.
+
   The C-Kermit Version number is major.minor.edit (integers).
   Major version always goes up.
 
@@ -97,8 +101,8 @@ static char sccsid[] = "@(#)C-Kermit 9.0.305";
   for future releases.
 */
 
-char *ck_s_ver = "9.0.305";             /* C-Kermit version string */
-long  ck_l_ver =  900305L;              /* C-Kermit version number */
+char *ck_s_ver = "10.0";             /* C-Kermit version string */
+long  ck_l_ver = 1000000L;              /* C-Kermit version number */
 
 #ifdef OS2
 /* New Open Source C-Kermit for Windows is just C-Kermit */
@@ -167,17 +171,18 @@ int nolocale = 1;                       /* Don't use Locale */
 
 /*
   Principal Author: Frank da Cruz
-  fdc@kermitproject.org OR fdc@columbia.edu.
+    Columbia University 1974-2011;
+    the Open Source Kermit Project 2011-2022.
+    fdc@kermitproject.org OR fdc@columbia.edu.
 
   I am no longer at Columbia University as of 1 July 2011.
   The new Open Source Kermit Project website is the  definitive
   source for Kermit software created or updated since that date:
 
-    http://www.kermitproject.org
+    https://www.kermitproject.org
 
-  The associated FTP site is:
-
-    ftp://ftp.kermitproject.org/
+  The associated FTP site was ftp://ftp.kermitproject.org/ but FTP has been
+  "deprecated" since 2021 so all downloads are now done by HTTP(S) links.
 
   Note that Columbia University holds the copyright to this software in
   perpetuity, but as of C-Kermit 9.0 the license has changed from the

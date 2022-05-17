@@ -6,10 +6,11 @@
   Author: Frank da Cruz <fdc@columbia.edu>,
   Columbia University Academic Information Systems, New York City.
 
-  Copyright (C) 1985, 2010,
+  Copyright (C) 1985, 2022,
     Trustees of Columbia University in the City of New York.
     All rights reserved.  See the C-Kermit COPYING.TXT file or the
     copyright text in the ckcmai.c module for disclaimer and permissions.
+    Last update: 8 May 2022
 */
 /*
  Note -- if you change this file, please amend the version number and date at
@@ -1483,7 +1484,7 @@ gattr(s, yy) CHAR *s; struct zattr *yy; { /* Read incoming attribute packet */
 	yy->disp.val = dsbuf;
 	yy->disp.len = 1;
     }
-    while (c = *s++) {			/* Get attribute tag */
+    while ((c = *s++)) {                /* Get attribute tag */
 	aln = xunchar(*s++);		/* Length of attribute string */
 	switch (c) {
 #ifdef COMMENT				/* This case combined with '1' below */
@@ -2123,7 +2124,7 @@ opena(f,zz) char *f; struct zattr *zz; {
 	  return(-17);			/* Secret code */
     }
     debug(F111,"opena [file]=mode: ",f,fcb.dsp);
-    if (x = openo(f,zz,&fcb)) {		/* Try to open the file. */
+    if ((x = openo(f,zz,&fcb))) {       /* Try to open the file. */
 #ifdef pdp11
 	tlog(F110," local name:",f,0L);	/* OK, open, record local name. */
 	makestr(&prfspec,f);		/* New preliminary name */
@@ -2179,10 +2180,11 @@ opena(f,zz) char *f; struct zattr *zz; {
     } else {				/* Did not open file OK. */
 
 	rf_err = ck_errstr();		/* Get system error message */
-	if (*rf_err)
-	  xxscreen(SCR_EM,0,0l,rf_err);
-	else
-	  xxscreen(SCR_EM,0,0l,"Can't open output file");
+	if (*rf_err) {
+            xxscreen(SCR_EM,0,0l,rf_err);
+        } else {
+            xxscreen(SCR_EM,0,0l,"Can't open output file");
+        }
         tlog(F110,"Failure to open",f,0L);
         tlog(F110,"Error:",rf_err,0L);
 	debug(F110,"opena error",rf_err,0);
