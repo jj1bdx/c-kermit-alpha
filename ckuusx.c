@@ -9170,8 +9170,8 @@ char *s;        /* a string */
 /* Dummies for when cursor control is not supported */
 int
 #ifdef CK_ANSIC
-# fdc 5 May 2022
-ck_curpos(int row, col) {
+/* fdc 5 May 2022 */
+ck_curpos(int row, int col) {
 #else
 ck_curpos(row, col)
     int row;
