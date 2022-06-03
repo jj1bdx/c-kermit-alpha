@@ -20,7 +20,7 @@
   This module contains user interface functions needed by both the interactive
   user interface and the command-line-only user interface, as well as the
   screen-control routines (curses and equivalent).
-  Wed Nov  3 15:23:43 2021
+  Fri Jun  3 10:54:47 2022
 */
 
 /* Includes */
@@ -9170,12 +9170,13 @@ char *s;        /* a string */
 /* Dummies for when cursor control is not supported */
 int
 #ifdef CK_ANSIC
-ck_curpos(int row, int col) {
+ck_curpos(int row, int col)
 #else
 ck_curpos(row, col)
     int row;
     int col;
 #endif  /* CK_ANSIC */
+{    
     return(-1);
 }
 
