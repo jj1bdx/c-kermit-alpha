@@ -1,8 +1,8 @@
-char *ckathv = "Authentication, 9.0.237, 14 Nov 2021";
+char *ckathv = "Authentication, 10.0.239, 30 Sep 2022";
 /*
   C K U A T H . C  --  Authentication for C-Kermit
 
-  Copyright (C) 1999, 2021,
+  Copyright (C) 1999, 2022,
     Trustees of Columbia University in the City of New York.
     All rights reserved.  See the C-Kermit COPYING.TXT file or the
     copyright text in the ckcmai.c module for disclaimer and permissions.
@@ -77,19 +77,23 @@ int accept_complete = 0;
 #ifndef LIBDES
 #define LIBDES
 #endif /* LIBDES */
+#endif /* CRYPT_DLL */
+
 #ifdef OS2
 #ifdef NT
 #include <windows.h>
 #else /* NT */
 #define INCL_DOSMODULEMGR
+#define INCL_DOSSEMAPHORES
 #include <os2.h>
 #endif /* NT */
 #endif /* OS2 */
-#endif /* CRYPT_DLL */
 
 #ifdef NT
 #define KRB5_AUTOCONF__
+#ifndef NONTLM
 #define NTLM
+#endif /* NONTLM */
 #endif /* NT */
 
 #ifdef CK_KERBEROS
@@ -116,9 +120,23 @@ int accept_complete = 0;
 #include <stdio.h>
 #include <time.h>
 #include <fcntl.h>
+#ifndef OS2
+/* Not OS/2 or NT */
 #include <errno.h>
+#endif  /* OS2 */
+
 #ifdef OS2
 #include <io.h>
+#ifdef NT
+/* Win32 gets errno.h */
+#include <errno.h>
+#else /* NT */
+/* OS2 gets errno.h only if we're not compiling with Watcom C as
+ * the definitions in its errno.h conflict with those in os2.h */
+#ifndef __WATCOMC__
+#include <errno.h>
+#endif /* __WATCOMC__ */
+#endif /* NT */
 #endif /* OS2 */
 
 #ifdef KRB5
@@ -138,7 +156,7 @@ int accept_complete = 0;
 #include "krb5.h"
 #ifdef BETATEST
 #include "profile.h"
-#endif
+#endif /* BETATEST */
 #include "com_err.h"
 #ifdef KRB5_GET_INIT_CREDS_OPT_TKT_LIFE
 #define KRB5_HAVE_GET_INIT_CREDS
@@ -748,7 +766,11 @@ int
 ck_ntlm_is_installed()
 {
 #ifdef NT
+#ifndef NTLM
+    return(0);
+#else
     return(hSSPI != NULL);
+#endif
 #else /* NT */
     return(0);
 #endif /* NT */
@@ -1343,6 +1365,12 @@ ck_tn_auth_request()
 }
 
 #ifdef CK_ENCRYPTION
+_PROTOTYP(int encrypt_is_decrypting,(void));
+_PROTOTYP(int  encrypt_request_start, (void));
+_PROTOTYP(int encrypt_request_end, (void));
+_PROTOTYP(int get_crypt_table,(struct keytab **, int *));
+/* The four above added fdc 26 September 2022 */
+
 VOID
 ck_tn_enc_start()
 {
@@ -5500,7 +5528,11 @@ k5_auth_is(how,data,cnt) int how; unsigned char *data; int cnt;
         if ((how & AUTH_HOW_MASK) == AUTH_HOW_MUTUAL) {
             /* do ap_rep stuff here */
             if ((r = krb5_mk_rep(k5_context,
+#ifdef HEIMDAL                          /* Greg Troxel 29 Sep 2022 */
+                                  &auth_context,
+#else /* HEIMDAL */
                                   auth_context,
+#endif /* HEIMDAL */
                                   &outbuf))) {
                 debug(F111,"k5_auth_is","krb5_mk_rep",r);
                 (void) ckstrncpy(errbuf, "Make reply failed: ",sizeof(errbuf));

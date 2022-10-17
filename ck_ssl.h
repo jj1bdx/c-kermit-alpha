@@ -1,13 +1,16 @@
 /*
   C K _ S S L . H --  OpenSSL Interface Header for C-Kermit
 
-  Copyright (C) 1985, 2015,
+  Copyright (C) 1985, 2020,
     Trustees of Columbia University in the City of New York.
     All rights reserved.  See the C-Kermit COPYING.TXT file or the
     copyright text in the ckcmai.c module for disclaimer and permissions.
 
-    Author:  Jeffrey E Altman (jaltman@secure-endpoints.com)
+    Authors:  Jeffrey E Altman (jaltman@secure-endpoints.com)
                Secure Endpoints Inc., New York City
+              David Goodwin, New Zealand
+              SMS
+    Last update: Tue Oct  4 16:01:53 2022
 */
 
 #ifdef CK_SSL
@@ -32,7 +35,9 @@
 #endif /* OS2 */
 
 #ifdef ZLIB
+#ifndef OPENSSL_NO_COMP
 #include <openssl/comp.h>
+#endif /* OPENSSL_NO_COMP */
 #endif /* ZLIB */
 /* We place the following to avoid loading openssl/mdc2.h since it 
  * relies on the OpenSSL des.h.  Since we do not need the MDC2 
@@ -45,14 +50,15 @@
 /* Different major/minor version or development version of OpenSSL
  * means ABI may break compatibility.
  * Modified by Adam Friedlander for OpenSSL >= 1.0.0
+ * (See <openssl/opensslv.h> for OpenSSL version encoding details.)
  */
-#define COMPAT_VERSION_MASK 0xffff000f
+#define COMPAT_VERSION_MASK 0xfff0000f  /* MNNffppS, major+minor+status */
 #else
 /* Different major/minor/fix/development (not patch) version of OpenSSL
  * means ABI may break compatibility. */
-#define COMPAT_VERSION_MASK 0xffffff0f
-
+#define COMPAT_VERSION_MASK 0xfffff00f  /* MNNFFppS, major+minor+fix+status */
 #endif	/* OPENSSL_100 */
+
 #ifdef OPENSSL_098
 #define OPENSSL_097
 #endif /* OPENSSL_098 */

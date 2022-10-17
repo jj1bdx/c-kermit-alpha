@@ -1,8 +1,8 @@
 # makefile / Makefile / ckuker.mak / CKUKER.MAK
 #
-# Thu Jun  2 10:59:23 2022
-BUILDID=20220602
-CKVER= "10.0 Beta.03"
+# Fri Oct 14 15:56:49 2022
+BUILDID=20221014
+CKVER= "10.0 Beta.06"
 #
 # -- Makefile to build C-Kermit for UNIX and UNIX-like platforms --
 #
@@ -822,9 +822,12 @@ CKVER= "10.0 Beta.03"
 # If the secure headers and libraries are not on your computer, you have
 # to download and install them, for example from http://www.openssl.org .
 #
-# The following symbols are used to specify library and header file locations:
+# The following symbols are used to specify library and header file locations.
+# prefix statement changed in 10.0 Beta.06 to allow prefix to specified
+# from the make command line e.g. $ env PREFIX=/usr/pkg make install.
+# October 2022.
 # 
-prefix  = /usr/local
+prefix  = $${PREFIX:-/usr/local}
 srproot = $(prefix)
 sslroot = $(prefix)
 manroot = $(prefix)
@@ -1838,11 +1841,10 @@ netbsd netbsd2 netbsd15 netbsd16 old-netbsd:
 	-DCK_DTRCD -DCK_DTRCTS -DTPUTSARGTYPE=int -DFNFLOAT $(KFLAGS) -O" \
 	"LIBS= -lcurses -lcrypt -lm -lutil $(LIBS)"
 
-netbsdclang:
+netbsd-clang netbsdclang:
 	# Dummy comment \
 	@echo 'Making C-Kermit $(CKVER) for Linux with Clang compiler'
 	$(MAKE) CC=clang CC2=clang KTARGET=$${KTARGET:-$(@)} \
-	KFLAGS="-DNODEPRECATED $(KFLAGS)" \
 	"LNKFLAGS = $(LNKFLAGS)" \
 	netbsd
 
@@ -4048,7 +4050,7 @@ solaris9g64 solaris10g64 solaris11g64:
 	$(MAKE) "MAKE=$(MAKE)" CC="gcc -m64" CC2="gcc -m64" xermit \
 	KTARGET=$${KTARGET:-$(@)} \
 	"CFLAGS = -g -O -Usun -funsigned-char \
-	-DSVR4 $$SOLARISVERSION -DNOARROWKEYS \
+	-DSVR4 $$SOLARISVERSION \
 	-DSTERMIOX -DSELECT -DFNFLOAT -DUSE_STRERROR -DCK_PAM -DCK_SHADOW \
 	-DHAVE_STREAMS -DHAVE_GRANTPT -DHAVE_PTSNAME -DPUSH_PTEM \
 	-DPUSH_LDTERM -DPUSH_TTCOMPAT \
@@ -6204,16 +6206,6 @@ linuxa:
 	-DUSE_STRERROR $(KFLAGS)" "LNKFLAGS = $(LNKFLAGS)" \
 	"LIBS = $(LIBS) -lm"
 
-linuxuseclang:
-	@echo 'Making C-Kermit $(CKVER) for Linux 1.2 or later...'
-	@echo 'IMPORTANT: Read the comments in the linux section of the'
-	@echo 'makefile if you have trouble.'
-	$(MAKE) xermit KTARGET=$${KTARGET:-$(@)} "CC = clang" "CC2 = clang" \
-	"CFLAGS = -O -DLINUX -pipe -funsigned-char -DFNFLOAT -DCK_POSIX_SIG \
-	-DCK_NEWTERM -DTCPSOCKET -DLINUXFSSTND -DNOCOTFMC -DPOSIX \
-	-DUSE_STRERROR $(KFLAGS)" "LNKFLAGS = $(LNKFLAGS)" \
-	"LIBS = $(LIBS) -lm"
-
 # As above but with profiling
 linuxp:
 	$(MAKE) linuxa KTARGET=$${KTARGET:-$(@)} "KFLAGS=$(KFLAGS) -pg" \
@@ -6338,7 +6330,7 @@ linuxgcc:
 	$(MAKE) "CC=gcc" "CC2=gcc" linux
 
 # Force compilation with clang
-linuxclang:
+linux-clang linuxclang:
 	$(MAKE) "CC=clang" "CC2=clang" linux
 
 #PREVIOUS LINUX TARGET
@@ -6476,7 +6468,7 @@ linuxns:
 # Linux-script-only:
 # A minimum-size version for Linux that does only scripting and
 # serial communication -- no networks, no file transfer, no security.
-# OK 2011/06/18
+# OK 2011/06/18 // 2022/10/14: compiles but various commands don't work.
 linuxso:
 	$(MAKE) xermit KTARGET=$${KTARGET:-$(@)} "CC = gcc" "CC2 = gcc" \
 	"CFLAGS = -O -DLINUX -pipe -funsigned-char -DPOSIX -DCK_POSIX_SIG \
@@ -8050,7 +8042,7 @@ qnx_nto2+:
 qnx6:
 	@echo 'Making C-Kermit $(CKVER) for QNX6'
 	$(MAKE) xermit KTARGET=QNX6 \
-	"CFLAGS = -DPOSIX -DCK_POSIX_SIG -DNETPTY -DNOARROWKEYS \
+	"CFLAGS = -DPOSIX -DCK_POSIX_SIG -DNETPTY \
 	-DUSE_TIOCSDTR -DBIGBUFOK -DCKMAXOPEN=100 -DRLOGCODE -DNOREALPATH \
 	-DMAXNAMLEN=48 -DQNX6 -DUSE_TERMIO -DINIT_SPTY \
 	-DCK_CURSES -DCK_WREFRESH -DCK_NEWTERM -DDYNAMIC \
@@ -8811,7 +8803,7 @@ minix3:
 	$(MAKE) wermit KTARGET=$${KTARGET:-$(@)} \
 	"CFLAGS= -DPOSIX -DNOUUCP -DNOLEARN $(KFLAGS) -DMINIX2 \
 	-DMINIX3 -DNO_PARAM_H -DNOSYSLOG -DNOGETUSERSHELL \
-	-DNOINITGROUPS -DNOFTRUNCATE -DNOARROWKEYS -DDNOREALPATH \
+	-DNOINITGROUPS -DNOFTRUNCATE -DDNOREALPATH \
 	-DTCPSOCKET -DNOTIMEZONE -DNOFTP -DNO_DNS_SRV -O"
 
 #MINIX315 - MINIX 3 1.5 - January 2010
@@ -8820,7 +8812,7 @@ minix315:
 	$(MAKE) wermit KTARGET=$${KTARGET:-$(@)} \
 	"CFLAGS= -DMINIX315 -DPOSIX -DNOUUCP -DNOJC -DNOLEARN $(KFLAGS) \
 	-DHAVE_OPENPTY -DNO_PARAM_H -DNOSYSLOG -DNOGETUSERSHELL \
-	-DSYSTIMEH -DNOINITGROUPS -DNOFTRUNCATE -DNOARROWKEYS -DNOREALPATH \
+	-DSYSTIMEH -DNOINITGROUPS -DNOFTRUNCATE -DNOREALPATH \
 	-DTCPSOCKET -DNOTIMEZONE -DNO_DNS_SRV -DNOFTP -O"
 
 #MINIX340 - MINIX 3.4.0 - January 2022
@@ -8831,7 +8823,7 @@ minix340:
 	-DCK_TRCD -DCK_TRCTS -DZLIB -DBSD44 -DNOJC \
 	-DNDSYSERRLIST -DNOJC -DHAVE_OPENPTY $(KFLAGS) \
 	-DLOCK_DIR=\\\"/var/spool/uucp\\\" \
-	-DSYSTIMEH -DNOARROWKEYS -DTCPSOCKET -O" \
+	-DSYSTIMEH -DTCPSOCKET -O" \
 	"LIBS= -lcrypt -lcurses -lutil"
 
 #PFU Compact A Series UNIX System V R3, SX/A TISP V10/L50 (Japan)

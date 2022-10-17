@@ -1,6 +1,6 @@
 #include "ckcsym.h"
 
-char *cmdv = "Command package 9.0.178, 16 May 2022";
+char *cmdv = "Command package 10.0.179, 12 Oct 2022";
 
 /*  C K U C M D  --  Interactive command package for Unix  */
 
@@ -10,11 +10,16 @@ char *cmdv = "Command package 9.0.178, 16 May 2022";
   Author: Frank da Cruz (fdc@columbia.edu),
   Formerly of Columbia University Academic Information Systems, New York City.
   Since 1 July 2011, Open Source Kermit Project.
+  Most recent update: Fri Oct 14 13:44:53 2022
 
   Copyright (C) 1985, 2022,
     Trustees of Columbia University in the City of New York.
     All rights reserved.  See the C-Kermit COPYING.TXT file or the
     copyright text in the ckcmai.c module for disclaimer and permissions.
+    
+  Note: the name of these files really should be ckccmd.h and ckccmd.c
+    because they are for all platforms, not just Unix.  But "don't fix
+    what ain't broke".
 */
 
 #define FUNCTIONTEST
@@ -56,6 +61,7 @@ int cmdmsk = 255;			/* 31 Dec 2000 (was 127) */
 
 #undef CKUCMD_C
 
+_PROTOTYP( int nlookup, (struct keytab [], char *, int, int *) );
 _PROTOTYP( int unhex, (char) );
 _PROTOTYP( static VOID cmdclrscn, (void) );
 
@@ -197,6 +203,7 @@ modules would have to be changed...
 #endif /* CK_ANSIC */
 #endif /* OSF13 */
 
+#ifndef OS2
 #ifndef HPUXPRE65
 #include <errno.h>			/* Error number symbols */
 #else
@@ -204,6 +211,19 @@ modules would have to be changed...
 #include <errno.h>			/* Error number symbols */
 #endif	/* ERRNO_INCLUDED */
 #endif	/* HPUXPRE65 */
+#endif /* OS2 */
+
+/* Error number symbols - any compiler targeting Windows
+ * and non-watcom compilers targeting OS/2. */
+#ifdef OS2
+#ifdef NT
+#include <errno.h>
+#else /* NT */
+#ifndef __WATCOMC__
+#include <errno.h>
+#endif /* __WATCOMC__ */
+#endif /* NT */
+#endif /* OS2 */
 
 #ifdef OS2
 #ifndef NT
@@ -883,7 +903,7 @@ prompt(f) xx_strp f; {
 #else
 #ifdef IKSD
     if (inserver) {			/* Print the prompt. */
-        ttoc(CR);			/* If TELNET Server */
+        ttoc(CK_CR);			/* If TELNET Server */
         ttoc(NUL);			/* must folloW CR by NUL */
         printf("%s",sx);
     } else
@@ -3180,7 +3200,9 @@ cmtxt(xhlp,xdef,xp,f) char *xhlp; char *xdef; char **xp; xx_strp f; {
 /*
  Call with:
    table    --  keyword table, in 'struct keytab' format;
-   n        --  number of entries in table;
+   n        --  number of entries in table.
+                if the table is alphabetic order, n is positive.
+                if the table is numeric order, n is negative.
    xhlp     --  pointer to help string;
    xdef     --  pointer to default keyword;
    f        --  string preprocessing function (e.g. to evaluate variables)
@@ -3194,11 +3216,11 @@ cmtxt(xhlp,xdef,xp,f) char *xhlp; char *xdef; char **xp; xx_strp f; {
    -3       --  no input supplied and no default available
    -2       --  input doesn't uniquely match a keyword in the table
    -1       --  user deleted too much, command reparse required
-    n >= 0  --  value associated with keyword
+    n >= 0  --  value associated with keyword as defined in the keyword table
 */
 
 /*
-  Front ends for cmkey2(): 
+  Front ends for cmkey(): 
   cmkey()  - The normal keyword parser
   cmkeyx() - Like cmkey() but suppresses error messages
   cmswi()  - Switch parser
@@ -3218,7 +3240,7 @@ cmswi(table,n,xhlp,xdef,f)
 /* cmswi */  struct keytab table[]; int n; char *xhlp, *xdef; xx_strp f; {
     return(cmkey2(table,n,xhlp,xdef,"",f,4));
 }
-
+/* c m k e y 2 -- The normal keyword parsing function */
 int
 cmkey2(table,n,xhlp,xdef,tok,f,pmsg)
     struct keytab table[];
@@ -3230,10 +3252,19 @@ cmkey2(table,n,xhlp,xdef,tok,f,pmsg)
 { /* cmkey2 */
     extern int havetoken;
     int i, tl, y, z = 0, zz, xc, wordlen = 0, cmswitch;
+    int numeric = 0;
     char *xp, *zq;
 
     if (!xhlp) xhlp = "";
     if (!xdef) xdef = "";
+    debug(F101,"cmkey lookup entry n","",n);
+    numeric = 0;
+    if (n < 0) {                        /* Using a numeric-order table */
+        debug(F101,"cmkey called for numeric nlookup n","",n);
+        numeric = 1;
+        n = -n;                         /* rather than an alphabetic one */
+    }
+    debug(F101,"cmkey lookup entry n","",n);
 
     cmfldflgs = 0;
     if (!table) {
@@ -3248,7 +3279,6 @@ cmkey2(table,n,xhlp,xdef,tok,f,pmsg)
     debug(F101,"cmkey: pmsg","",pmsg);
     debug(F101,"cmkey: cmflgs","",cmflgs);
     debug(F101,"cmkey: cmswitch","",cmswitch);
-    /* debug(F101,"cmkey: cmdbuf","",cmdbuf);*/
 
     ppvnambuf[0] = NUL;
 
@@ -3382,8 +3412,16 @@ cmkey2(table,n,xhlp,xdef,tok,f,pmsg)
 	    }
 #endif /* TOKPRECHECK */
 
-	    y = lookup(table,atmbuf,n,&z); /* Look up word in the table */
-	    debug(F111,"cmkey lookup",atmbuf,y);
+/* Look up word in its table, which can be in alphabetic or numeric order */
+            if (numeric) {              /* Numeric table */
+                debug(F101,"cmkey numeric calling nlookup ","",numeric);
+                y = nlookup(table,atmbuf,n,&z);
+                debug(F111,"cmkey nlookup",atmbuf,y);
+            } else {                    /* Alphabetic table */
+                debug(F101,"cmkey NOT numeric calling lookup ","",numeric);
+                y = lookup(table,atmbuf,n,&z);
+                debug(F111,"cmkey lookup",atmbuf,y);
+            }
 	    debug(F101,"cmkey zz","",zz);
 	    debug(F101,"cmkey cmflgs","",cmflgs);
 	    debug(F101,"cmkey crflag","",crflag);
@@ -3456,7 +3494,7 @@ cmkey2(table,n,xhlp,xdef,tok,f,pmsg)
 		    inword = cmflgs = 0;
 		    debug(F111,"cmkey: default",atmbuf,cc);
 		} else {
-		    debug(F101,"cmkey Esc pmsg","",0);
+		    debug(F101,"cmkey Esc pmsg","",pmsg);
 #ifdef COMMENT
 /*
   Chained FDBs...  The idea is that this function might not have a default,
@@ -3486,12 +3524,22 @@ cmkey2(table,n,xhlp,xdef,tok,f,pmsg)
 		    return(-9);
 		}
 	    }
-	    y = lookup(table,atmbuf,n,&z); /* Something in atmbuf */
-	    debug(F111,"cmkey lookup y",atmbuf,y);
-	    debug(F111,"cmkey lookup z",atmbuf,z);
+            if (numeric) {                              /* Numeric table */
+                y = nlookup(table,atmbuf,n,&z);
+                debug(F111,"cmkey nlookup n",atmbuf,n); /* table length */
+                debug(F111,"cmkey nlookup y",atmbuf,y); /* return value */
+                debug(F111,"cmkey nlookup z",atmbuf,z); /* last match */
+            } else {                                    /* Alphabetic table */
+                y = lookup(table,atmbuf,n,&z);
+                debug(F111,"cmkey lookup n",atmbuf,n);
+                debug(F111,"cmkey lookup y",atmbuf,y);
+                debug(F111,"cmkey lookup z",atmbuf,z);
+            }
 	    if (y == -2 && z >= 0 && z < n) { /* Ambiguous */
 #ifndef NOPARTIAL
 		int j, k, len = 9999;	/* Do partial completion */
+                int start = 0;          /* where to start searching */
+
 		/* Skip past any abbreviations in the table */
 		for ( ; z < n; z++) {
 		    if ((table[z].flgs & CM_ABR) == 0)
@@ -3499,10 +3547,12 @@ cmkey2(table,n,xhlp,xdef,tok,f,pmsg)
 		    if (!(table[z].flgs & CM_HLP) || (pmsg & 2))
 		      break;
 		}
-		debug(F111,"cmkey partial z",atmbuf,z);
-		debug(F111,"cmkey partial n",atmbuf,n);
-		for (j = z+1; j < n; j++) {
-		    debug(F111,"cmkey partial j",table[j].kwd,j);
+                if (numeric) {          /* Numeric table */
+                    start = 0;          /* search whole table */
+                } else {                /* Alphabetic table */
+                    start = z + 1;      /* start here */
+                }
+		for (j = start; j < n; j++) {
 		    if (ckstrcmp(atmbuf,table[j].kwd,cc,0))
 		      break;
 		    if (table[j].flgs & CM_ABR)
@@ -3510,11 +3560,9 @@ cmkey2(table,n,xhlp,xdef,tok,f,pmsg)
 		    if ((table[j].flgs & CM_HLP) && !(pmsg & 2))
 		      continue;
 		    k = ckstrpre(table[z].kwd,table[j].kwd);
-		    debug(F111,"cmkey partial k",table[z].kwd,k);
 		    if (k < len)
 		      len = k; /* Length of longest common prefix */
 		}
-		debug(F111,"cmkey partial len",table[z].kwd,len);
 		if (len != 9999 && len > cc) {
 		    ckstrncat(atmbuf,table[z].kwd+cc,ATMBL);
 		    atmbuf[len] = NUL;
@@ -3602,7 +3650,6 @@ cmkey2(table,n,xhlp,xdef,tok,f,pmsg)
 	    }
 	    inword = 0;
 	    cmflgs = 0;
-	    debug(F110,"cmkey: addbuf",cmdbuf,0);
 	    return(y);
 
 	  case 3:			/* User typed "?" */
@@ -3617,7 +3664,11 @@ cmkey2(table,n,xhlp,xdef,tok,f,pmsg)
 		    return(-9);
 		}
 	    }
-	    y = lookup(table,atmbuf,n,&z); /* Look up what we have so far. */
+            if (numeric) {
+                y = nlookup(table,atmbuf,n,&z); /* Numeric table */
+            } else {
+                y = lookup(table,atmbuf,n,&z); /* Alphabetic table */
+            }
 	    if (y == -1) {
 		/*
 		  Strictly speaking if the main keyword table search fails,
@@ -4067,8 +4118,20 @@ delta2sec(s,result) char * s; long * result; {
     *result = zz;
     return(0);
 }
+/*
+  C M C V T D A T E
 
-
+  cmcvtdate(date-time-string, format-selector)
+  Converts the given free-format date-time (s) to various formats (t):
+  t = 1: yyyy-mmm-dd hh:mm:ss (mmm = English 3-letter month abbreviation)
+  t = 2: dd-mmm-yyyy hh:mm:ss (ditto)
+  t = 3: yyyymmddhhmmss (all numeric)
+  t = 4: Day Mon dd hh:mm:ss yyyy (asctime)
+  t = 5: yyyy:mm:dd:hh:mm:ss (all numeric with all fields delimited)
+  t = 6: dd month-spelled-out yyyy hh:mm:ss
+  Other:  yyyymmdd hh:mm:dd
+  If t is negative (-1 through -6) result is date only.
+*/
 char *
 cmcvtdate(s,t) char * s; int t; {
     int x, i, j, k, hh, mm, ss, ff, pmflag = 0, nodate = 0, len, dow;
@@ -5439,6 +5502,8 @@ cmdiffdate(d1,d2) char * d1, * d2; {
       5: Reformat as delimited numeric yyyy:mm:dd:hh:mm:ss.
     Returns:
       Pointer to result if args valid, otherwise original arg pointer.
+      Result is normally date and time in the given format but
+      if called with a negative opt (-1 through -6) result is date only.
 */
 char *
 shuffledate(p,opt) char * p; int opt; {
@@ -5455,19 +5520,25 @@ shuffledate(p,opt) char * p; int opt; {
     _PROTOTYP( char * locale_monthname, (int, int) );
     extern int nolocale;
 #endif /* HAVE_LOCALE */
+    int notime = 0;
 
     if (!p) p = "";
     if (!*p) p = ckdate();
+    if (opt < 0) {                      /* Negative opt means no time */
+        notime = 1;
+        opt = -opt;
+    }
     if (opt < 1 || opt > 6)
       return(p);
     len = strlen(p);
     if (len < 8 || len > 31) return(p);
+
     if (opt == 4) {			/* Asctime format (26 Nov 2005) */
 	char c, * s;
 	long z; int k;
 	ckstrncpy(ibuf,p,31);
 	k = len;
-	while (k >= 0 && ibuf[k] == CR || ibuf[k] == LF)
+	while (k >= 0 && ibuf[k] == CK_CR || ibuf[k] == LF)
 	  ibuf[k--] = NUL;
 	while (k >= 0 && ibuf[k] == SP || ibuf[k] == HT)
 	  ibuf[k--] = NUL;
@@ -5501,13 +5572,21 @@ shuffledate(p,opt) char * p; int opt; {
 	else
 	  obuf[8] = p[6];
         obuf[9] = p[7];
-	ckstrncpy(&obuf[10],&p[8],10);	/* Time */
-        obuf[19] = SP;			/* Space */
-	obuf[20] = p[0];		/* Year */
-	obuf[21] = p[1];
-	obuf[22] = p[2];
-	obuf[23] = p[3];
-	obuf[24] = NUL;
+        if (notime) {                   /* Just the date */
+            obuf[10] = p[0];		/* Year */
+            obuf[11] = p[1];
+            obuf[12] = p[2];
+            obuf[13] = p[3];
+            obuf[14] = NUL;
+        } else {                           /* Date and time */
+            ckstrncpy(&obuf[10],&p[8],10); /* Time */
+            obuf[19] = SP;                 /* Space */
+            obuf[20] = p[0];               /* Year */
+            obuf[21] = p[1];
+            obuf[22] = p[2];
+            obuf[23] = p[3];
+            obuf[24] = NUL;
+        }
 	return((char *)obuf);
     }
     if (opt == 5) {			/* 20130722 All fields delimited */
@@ -5527,16 +5606,20 @@ shuffledate(p,opt) char * p; int opt; {
 	obuf[i++] = sep;		/*  */
 	obuf[i++] = p[6];		/* d */
 	obuf[i++] = p[7];		/* d */
-	obuf[i++] = sep;		/*  */
-	obuf[i++] = p[9];		/* h */
-	obuf[i++] = p[10];		/* h */
-	obuf[i++] = sep;		/*  */
-	obuf[i++] = p[12];		/* m */
-	obuf[i++] = p[13];		/* m */
-	obuf[i++] = sep;		/*  */
-	obuf[i++] = p[15];		/* s */
-	obuf[i++] = p[16];		/* s */
-	obuf[i++] = NUL;		/* end */
+        if (notime) {
+            obuf[i++] = NUL;
+        } else {
+            obuf[i++] = sep;		/*  */
+            obuf[i++] = p[9];		/* h */
+            obuf[i++] = p[10];		/* h */
+            obuf[i++] = sep;		/*  */
+            obuf[i++] = p[12];		/* m */
+            obuf[i++] = p[13];		/* m */
+            obuf[i++] = sep;		/*  */
+            obuf[i++] = p[15];		/* s */
+            obuf[i++] = p[16];		/* s */
+            obuf[i++] = NUL;		/* end */
+        }
 	return((char *)obuf);
     }
     if (opt == 3) {
@@ -5545,12 +5628,17 @@ shuffledate(p,opt) char * p; int opt; {
 	/* 01234567890123456 */
 	/* yyyymmddhhmmss    */
 	obuf[8] = obuf[9];
-	obuf[9] = obuf[10];
-	obuf[10] = obuf[12];
-	obuf[11] = obuf[13];
-	obuf[12] = obuf[15];
-	obuf[13] = obuf[16];
-	obuf[14] = NUL;
+
+        if (notime) {
+            obuf[9] = NUL;
+        } else {
+            obuf[9] = obuf[10];
+            obuf[10] = obuf[12];
+            obuf[11] = obuf[13];
+            obuf[12] = obuf[15];
+            obuf[13] = obuf[16];
+            obuf[14] = NUL;
+        }
 	return((char *)obuf);
     }
     ckstrncpy(ibuf,p,32);
@@ -5606,12 +5694,19 @@ shuffledate(p,opt) char * p; int opt; {
     switch (opt) {
       case 1:
         sprintf(obuf,"%04d-%s-%02d%s",yy,monthstring,dd,&ibuf[8]);
+        if (notime) obuf[11] = NUL;
         break;
       case 2:
         sprintf(obuf,"%02d-%s-%04d%s",dd,monthstring,yy,&ibuf[8]);
+        if (notime) obuf[11] = NUL;
         break;
       case 6:
         sprintf(obuf,"%d %s %d%s", dd, monthstring, yy, &ibuf[8]);
+        if (notime) {
+            int tmp;
+            tmp = (int)strlen(obuf) - 9;
+            obuf[tmp] = NUL;
+        }
         break;
       default:
         return(p);
@@ -6564,7 +6659,7 @@ CMDIRPARSE:
         }
 #endif /* FUNCTIONTEST */
 
-	if (quote && (c == CR || c == LF)) { /* Enter key following quote */
+	if (quote && (c == CK_CR || c == LF)) { /* Enter key following quote */
 	    *bp++ = CMDQ;		/* Double it */
 	    *bp = NUL;
 	    quote = 0;
@@ -6690,7 +6785,7 @@ CMDIRPARSE:
 		    return(4);
 		}
             }
-            if (c == LF || c == CR) {	/* CR or LF. */
+            if (c == LF || c == CK_CR) {	/* CR or LF. */
 		if (echof) {
                     cmdnewl((char)c);	/* echo it. */
 #ifdef BEBOX
@@ -7078,11 +7173,11 @@ CMDIRPARSE:
   we stuff the carriage return back in again, and go back and process it,
   this time with the quote flag off.
 */
-	    } else if (dirnamflg && (c == CR || c == LF || c == SP)) {
+	    } else if (dirnamflg && (c == CK_CR || c == LF || c == SP)) {
 		/* debug(F000,"gtword quote 2","",c); */
 		*bp++ = CMDQ;
 		linebegin = 0;		/* Not at beginning of line */
-		*bp = (c == SP ? SP : CR);
+		*bp = (c == SP ? SP : CK_CR);
 		goto CMDIRPARSE;
 #endif /* BS_DIRSEP */
 	    }
@@ -7267,7 +7362,7 @@ setatm(cp,fcode) char *cp; int fcode; {
                 break;
             }
 	    if ((fcode == 2) && (*cp == '=' || *cp == ':')) break;
-	    if ((fcode != 3) && (*cp == LF || *cp == CR)) break;
+	    if ((fcode != 3) && (*cp == LF || *cp == CK_CR)) break;
 	}
         *ap++ = *cp++;
         cc++;
@@ -7426,7 +7521,7 @@ cmdgetc(timelimit) int timelimit; {	/* Get a character from the tty. */
                     got_cr = 0;
                     break;
 #else /* COMMENT */
-                  case CR:
+                  case CK_CR:
                     if ( !TELOPT_U(TELOPT_BINARY) && got_cr ) {
                         /* This means the sender is violating Telnet   */
                         /* protocol because we received two CRs in a   */
@@ -7595,7 +7690,7 @@ cmdconchk() {
     debug(F101,"cmdconchk NOARROWKEYS x","",0);
 #else
     debug(F101,"cmdconchk stdin->_cnt","",stdin->_cnt);
-    x = stdin->_cnt;
+    x = stdin->_cnt;                    /* THIS BLOWS UP IN GLIBC >= 2.28 */
 #endif /* NOARROWKEYS */
 #endif /* VMS */
     if (x == 0) x = conchk();
@@ -7642,14 +7737,14 @@ cmdnewl(c) char c;
 #ifdef IKSD
     extern int inserver;
     if (inserver && c == LF)
-      putchar(CR);
+      putchar(CK_CR);
 #endif /* IKSD */
 #endif /* OS2 */
 
     putchar(c);				/* c is the terminating character */
 
 #ifdef WINTCP				/* what is this doing here? */
-    if (c == CR) putchar(NL);
+    if (c == CK_CR) putchar(NL);
 #endif /* WINTCP */
 
 /*
@@ -7659,30 +7754,30 @@ cmdnewl(c) char c;
   it is also very likely to result in unwanted blank lines.
 */
 #ifdef BSD44
-    if (c == CR) putchar(NL);
+    if (c == CK_CR) putchar(NL);
 #endif /* BSD44 */
 
 #ifdef COMMENT
     /* OS2 no longer needs this as all CR are converted to NL in coninc() */
     /* This eliminates the ugly extra blank lines discussed above.        */
 #ifdef OS2
-    if (c == CR) putchar(NL);
+    if (c == CK_CR) putchar(NL);
 #endif /* OS2 */
 #endif /* COMMENT */
 #ifdef aegis
-    if (c == CR) putchar(NL);
+    if (c == CK_CR) putchar(NL);
 #endif /* aegis */
 #ifdef AMIGA
-    if (c == CR) putchar(NL);
+    if (c == CK_CR) putchar(NL);
 #endif /* AMIGA */
 #ifdef datageneral
-    if (c == CR) putchar(NL);
+    if (c == CK_CR) putchar(NL);
 #endif /* datageneral */
 #ifdef GEMDOS
-    if (c == CR) putchar(NL);
+    if (c == CK_CR) putchar(NL);
 #endif /* GEMDOS */
 #ifdef STRATUS
-    if (c == CR) putchar(NL);
+    if (c == CK_CR) putchar(NL);
 #endif /* STRATUS */
 }
 
@@ -7739,7 +7834,7 @@ cmdecho(c,quote) char c; int quote;
 	putchar(c);
     }
 #ifdef OS2
-    if (quote==1 && c==CR) putchar((CHAR) NL);
+    if (quote==1 && c==CK_CR) putchar((CHAR) NL);
 #endif /* OS2 */
     if (timelimit)
       fflush(stdout);
@@ -7889,8 +7984,10 @@ unhex(x) char x;
   Call this way:  v = lookup(table,word,n,&x);
 
     table - a 'struct keytab' table.
-    word  - the target string to look up in the table.
+    cmd   - the target string to look up in the table (a.k.a word)
     n     - the number of elements in the table.
+            if n is negative, this desgnates a numeric-order table
+            instead of an alphabetic one (e.g. for "set speed")
     x     - address of an integer for returning the table array index,
 	    or NULL if you don't need a table index.
 
@@ -7912,9 +8009,7 @@ unhex(x) char x;
   target matches two or more keywords from the table.
 
   Lookup() is the critical routine in scripts and so is optimized with a
-  simple static cache plus some other tricks.  Maybe it could be improved
-  further with binary search or hash techniques but I doubt it since most
-  keyword tables are fairly short.
+  simple static cache plus some other tricks.
 */
 
 #ifdef USE_LUCACHE			/* Lookup cache */
@@ -8042,9 +8137,93 @@ lookup(table,cmd,n,x) char *cmd; struct keytab table[]; int n, *x; {
 
     if (!ckstrcmp(table[n-1].kwd,cmd,cmdlen,0)) {
         if (x) *x = n-1;
+
 	/* debug(F111,"lookup",table[i].kwd,table); */
         return(table[n-1].kwval);
     } else return(-1);
+}
+
+/*
+  n l o o k u p
+
+  Like lookup, but for a list of numbers sorted in numeric, rather than
+  alphabetic, order, as in SET SPEED.  All entries in the table must
+  be numeric strings (integer or floating point) -- not numbers. 
+*/
+int
+nlookup(table,word,n,x) char *word; struct keytab table[]; int n, *x; {
+
+    register int i, m;
+    int v, kwdlen, wordlen = 0, matches = 0, maxlen = 0;
+    char * s  = word;
+    int tmp = 0;
+    int tmp2 = 0;
+    int firstmatch = -1;
+    int lastmatch = -1;
+    int lastlen = 0;
+    char * this = NULL;
+
+/* Get 1st char of search object, if it's null return -3. */
+
+    debug(F111,"nlookup",word,n);
+
+    while (*s++) wordlen++;		/* Length of word to look up */
+    if (!wordlen) {                     /* Make sure there is a word */
+        return(-3);
+    }
+    s = word;                           /* Pointer to target word */
+
+    debug(F111,"nlookup wordlen",s,wordlen);  /* Word to look up and length */
+
+    for (i = 0; i < n; i++) {           /* Loop through the table */
+        this = table[i].kwd;
+        if (!isfloat(this,0)) {
+            /* If this happens the table is not numeric when it should be */
+            printf("NOT A NUMBER: %s\n",this);
+            *x = -1;
+            return(-1);
+        }
+        kwdlen = (int)strlen(this); /* Keyword table entry length */
+        maxlen = kwdlen;
+        if (wordlen > maxlen) maxlen = wordlen;
+#ifdef COMMENT
+        /* This can crash if locale not set */
+        tmp = ckstrcmp(this,word,maxlen,0);
+#else
+        tmp = strncmp(this,word,wordlen);
+#endif /* COMMENT */
+        if (tmp) {
+            debug(F111,"nlookup no match",table[lastmatch].kwd,tmp);
+        } else {
+            debug(F111,">>> nlookup match",this,wordlen); 
+            debug(F101,">>> nlookup kwdlen","",kwdlen); 
+            if (kwdlen == wordlen) {
+                /* this works */
+                debug(F111,"nlookup DIRECT HIT",word,table[i].kwval);
+                *x = i;                     /* Direct hit */
+                return(table[i].kwval);     /* Done */
+                return(i);
+            }
+            matches++;                  /* Count matches */
+            if (firstmatch < 0)         /* Remember first match */
+              firstmatch = i;
+            lastmatch = i;              /* Remember last match */
+            lastlen = kwdlen;           /* and last keyword length */
+        }
+    }
+    if (i > n) i = 0;       /* Loop exhausted makes i too large by one */
+
+    switch(matches) {
+      case 0:                           /* No matches */
+        *x = -1;
+        return(-1);
+      case 1:                           /* One match */
+        *x = lastmatch;
+        return(table[lastmatch].kwval);
+      default:                          /* Multiple matches: ambiguous */
+        *x = firstmatch;
+        return(-2);
+    }
 }
 
 /*

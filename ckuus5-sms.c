@@ -14,12 +14,14 @@ int cmdsrc() { return(0); }
       The Kermit Project, New York City
     Jeffrey E Altman <jaltman@secure-endpoints.com>
       Secure Endpoints Inc., New York City
-    Last update: Oct 10-11 2022 (fdc and sms)
+    Last update: Fri Sep 23 16:35:07 2022
 
   Copyright (C) 1985, 2022,
     Trustees of Columbia University in the City of New York.
     All rights reserved.  See the C-Kermit COPYING.TXT file or the
     copyright text in the ckcmai.c module for disclaimer and permissions.
+
+  Last update: Sat Sep 24 16:41:30 2022 (set \v(herald) in herald() - fdc).
 */
 
 /* Includes */
@@ -1243,30 +1245,26 @@ cmdini() {
   in earlier releases because of the new high-speed UARTs.  When the user
   types "set speed ?" the result is a confusing jumble because it's in
   "alphabetic" order rather than numeric.  This code sorts the list into
-  numeric order so a sensible result is obtained. -fdc 10 October 2022
+  numeric order so a sensible result is attained. -fdc 10 October 2022
 */
     if ( 1 ) {
         int i = 0;
         int k = 0;
-        int x = 0;
         int n = sizeof spdtab + 2;
-        int maxspeedlen = 20;
 
-#ifdef COMMENT
-/* This approach blew up on VMS even though it worked on Ubuntu and NetBSD */
+/* SMSd.  START */
+#if 0
         char * speeds[nspd + 2];
         struct keytab tmp[nspd + 2]; 
-#else
-/*
-  Fix by SMS 2022-10-11: Use constant array dimensions;
-  non-constant array dimensions are a C99 feature.
-*/
+#endif
         char **speeds;
         struct keytab *tmp;
 
         speeds = malloc( sizeof( char *)* (nspd + 2));
         tmp = malloc( sizeof( struct keytab)* (nspd + 2));        
-#endif /* COMMENT */
+/* SMSd.  END */
+
+        int maxspeedlen = 20;
 
         for (i = 0; i < nspd; i++) {    /* Allocate string storage */
             speeds[i] = malloc(n+2);
@@ -1292,11 +1290,9 @@ cmdini() {
         }
         for (i = 0; i < nspd; i++) {
             ckstrncpy(spdtab[i].kwd, tmp[i].kwd,n);
-            spdtab[i].flgs = tmp[i].flgs;
-            spdtab[i].kwval = tmp[i].kwval;
+            tmp[i].flgs = spdtab[i].flgs;
+            tmp[i].kwval = spdtab[i].kwval;
         }
-        free(tmp);
-        free(speeds);
     }
 #endif /* NOSORTSPEEDS */
 #endif /* TTSPDLIST */
