@@ -3,12 +3,12 @@
 #define CK_NONBLOCK                     /* See zoutdump() */
 
 #ifdef aegis
-char *ckzv = "Aegis File support, 10.0.229, 25 Sep 2022";
+char *ckzv = "Aegis File support, 10.0.231, 30 Nov 2022";
 #else
 #ifdef Plan9
-char *ckzv = "Plan 9 File support, 10.0.229, 25 Sep 2022";
+char *ckzv = "Plan 9 File support, 10.0.231, 30 Nov 2022";
 #else
-char *ckzv = "UNIX File support, 9.0.229, 25 Sep 2022";
+char *ckzv = "UNIX File support, 9.0.231, 30 Nov 2022";
 #endif /* Plan9 */
 #endif /* aegis */
 /*
@@ -207,14 +207,18 @@ extern int eofmethod;
 #define TIMESTAMP                       /* Can do file dates */
 #endif /* TIMESTAMP */
 #include <sys/time.h>
+#ifndef NOSYSTIMEBH                    /* <sys/timeb.h> */
 #include <sys/timeb.h>
+#endif /* NOSYSTIMEBH */
 
 #else  /* Not BSD44 */
 
 #ifdef BSD4                             /* BSD 4.3 and below */
 #define TIMESTAMP                       /* Can do file dates */
 #include <time.h>                       /* Need this */
+#ifndef NOSYSTIMEBH                    /* <sys/timeb.h> */
 #include <sys/timeb.h>                  /* Need this if really BSD */
+#endif /* NOSYSTIMEBH */
 
 #else  /* Not BSD 4.3 and below */
 
@@ -1094,6 +1098,19 @@ logwtmp __P ((__const char *__ut_line, __const char *__ut_name,
 #endif /* OSF50 */
 #endif /* HAVEUTMPX */
 #endif /* UTMPBUG */
+
+#ifdef CK_ANSIC
+/* Prototypes for static functions - fdc 30 November 2022 */
+static VOID addresult( char *, int );
+static VOID getfullname(char * );
+static VOID traverse(struct path *, char *, char * );
+static int checkuser( char * );
+static int fgen( char *, char[] *, int );
+static int initspace( char[] *, int );
+static struct path * splitpath( char * );
+struct passwd * sgetpwnam( char * );
+struct zfnfp * zfnqfp( char *, int, char * );
+#endif /* CK_ANSIC */
 
 #ifdef HAVEUTMPX
 #define UTMPSTRUCT utmpx

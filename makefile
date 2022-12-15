@@ -1,8 +1,8 @@
 # makefile / Makefile / ckuker.mak / CKUKER.MAK
 #
-# Fri Oct 14 15:56:49 2022
-BUILDID=20221014
-CKVER= "10.0 Beta.06"
+# Wed Dec  7 15:49:37 2022
+BUILDID=20221207
+CKVER= "10.0 Beta.07"
 #
 # -- Makefile to build C-Kermit for UNIX and UNIX-like platforms --
 #
@@ -15,7 +15,20 @@ CKVER= "10.0 Beta.06"
 #
 # Author: Frank da Cruz (principal author)
 # Email:  fdc@kermitproject.org
-# Web:    http://www.kermitproject.org
+# Web:    https://kermitproject.org
+#
+# Example for Linux:
+# 1. cd to your C-Kermit source-code directory
+# 2. make clean (to delete object files from previous builds)
+# 3. rm wermit  (remove any previous binary)
+# 4. make linux (to build a version for your Linux machine)
+# 5. make check (to check the result - depends on step 3)
+# 6. test it and report any any problems by email to the address above
+# 7. mv it to where it should reside, e.g. mv wermit /usr/local/bin/kermit
+# 8. chmod 755 or 775 if necessary and give appropriate owner and gruop
+# .. Many variations possible; see https://www.kermitproject.org/ckccfg.html
+#
+# Shortcut - Steps 4 and 5 can be combined: "make linux check"
 #
 # Note: Author is no longer at Columbia University or at the 115th Street
 # address as of 1 July 2011.  Even so, C-Kermit remains Copyright Columbia
@@ -304,14 +317,13 @@ CKVER= "10.0 Beta.06"
 # ? for Cray Computer Cray-2 or Cray3 with CSOS, "make craycsos"
 # ? for Cyber 910 (Silicon-Graphics Iris) with Irix 3.3, "irix33"
 # ? for Data General AViiON with DG/UX 5.4 before R3.00, "make dgux540"
-#     or "make dgux540c" (compile ckwart separately if necessary)
+#     or "make dgux540c"
 # ? for DG/UX 5.4 on AViiON Intel models, "make dgux540i" or dgux540ic.
 # ? for DG/UX 5.4R4.11 on AViiON, all models, "make dgux54411"
 # ? for DG/UX 5.4R4.20 on AViiON, all models, "make dgux54420"
 # ? for Data General AViiON with DG/UX 4.3x using Sys V-isms, "make dgux430"
 # ? for Data General AViiON with DG/UX 4.3x using BSD-isms, "make dgux430bsd"
-# ? for Data General AViiON, earlier UNIX versions,
-#     "make sys5r3" (maybe compile ckwart separately, or "touch ckcpro.c")
+# ? for Data General AViiON, earlier UNIX versions, "make sys5r3"
 # ? for Data General MV systems with DG/UX, ???
 # ? for Data General MV systems with MV/UX, use AOS/VS C-Kermit (CKDKER.MAK)
 # ? for Data General MV systems with AOS/VS, use CKDKER.MAK (last = C-K 7.0)
@@ -823,7 +835,7 @@ CKVER= "10.0 Beta.06"
 # to download and install them, for example from http://www.openssl.org .
 #
 # The following symbols are used to specify library and header file locations.
-# prefix statement changed in 10.0 Beta.06 to allow prefix to specified
+# prefix statement changed in 10.0 Beta.06 to allow prefix to be specified
 # from the make command line e.g. $ env PREFIX=/usr/pkg make install.
 # October 2022.
 # 
@@ -831,6 +843,9 @@ prefix  = $${PREFIX:-/usr/local}
 srproot = $(prefix)
 sslroot = $(prefix)
 manroot = $(prefix)
+
+# The default Kerberos settings seem to be based on AIX, Irix, and Solaris
+# but are not appropriate for (e.g.) Linux.
 
 K4LIB=-L/usr/kerberos/lib
 K4INC=-I/usr/kerberos/include
@@ -1009,11 +1024,10 @@ clean:
 	-rm -f ckcmai.$(EXT) ckucmd.$(EXT) ckuusr.$(EXT) ckuus2.$(EXT) \
 ckuus3.$(EXT) ckuus4.$(EXT) ckuus5.$(EXT) ckcpro.$(EXT) ckcfns.$(EXT) \
 ckcfn2.$(EXT) ckcfn3.$(EXT) ckuxla.$(EXT) ckucon.$(EXT) ckutio.$(EXT) \
-ckufio.$(EXT) ckudia.$(EXT) ckuscr.$(EXT) ckwart.$(EXT) ckuusx.$(EXT) \
-ckuusy.$(EXT) ckcnet.$(EXT) ckuus6.$(EXT) ckuus7.$(EXT) ckusig.$(EXT) \
-ckucns.$(EXT) ckcmdb.$(EXT) ckuath.$(EXT) ckctel.$(EXT) ckclib.$(EXT) \
-ckcuni.$(EXT) ck_crp.$(EXT) ck_ssl.$(EXT) ckupty.$(EXT) ckcftp.$(EXT) \
-ckcpro.c wart
+ckufio.$(EXT) ckudia.$(EXT) ckuscr.$(EXT) ckuusx.$(EXT) ckuusy.$(EXT) \
+ckcnet.$(EXT) ckuus6.$(EXT) ckuus7.$(EXT) ckusig.$(EXT) ckucns.$(EXT) \
+ckcmdb.$(EXT) ckuath.$(EXT) ckctel.$(EXT) ckclib.$(EXT) ckcuni.$(EXT) \
+ck_crp.$(EXT) ck_ssl.$(EXT) ckupty.$(EXT) ckcftp.$(EXT) ckcpro.$(EXT)
 
 show:
 	@echo prefix=$(prefix)
@@ -1050,6 +1064,16 @@ show:
 #
 #   make SHELL=ksh install
 #   make SHELL=/bin/posix/sh install
+#
+# POSTSCRIPT November 2022...  This target can not possibly cover all the
+# possible scenarios.  For example, installation on a multiuser timesharing
+# system by a sysadmin with root privilege versus installation on a desktop
+# by a home user who doesn't even know what "root" is.  Not to mention
+# differences among BSD, Linux, macOS, and the hundreds of historical Unix
+# versions that this makefile still aims to support.  If there is to be an
+# install script at this point, it makes more sense for it to be a Kermit
+# script.  I hope to find the the time to write one in time for the C-Kermit
+# 10.0 release.  - fdc, Thu Nov 24 08:13:18 2022
 #
 install:
 	@echo Installing C-Kermit version $(CKVER)...;\
@@ -1438,12 +1462,6 @@ ckcmai.$(EXT): ckcmai.c ckcker.h ckcdeb.h ckcsym.h ckcasc.h ckcnet.h ckcsig.h \
 
 ckclib.$(EXT): ckclib.c ckclib.h ckcdeb.h ckcasc.h ckcsym.h
 
-ckcpro.$(EXT): ckcpro.c ckcker.h ckcdeb.h ckcsym.h ckcasc.h ckclib.h
-
-ckcpro.c: ckcpro.w wart ckcdeb.h ckcsym.h ckcasc.h ckcker.h ckcnet.h ckctel.h \
-	 ckclib.h
-	./wart ckcpro.w ckcpro.c
-
 ckcfns.$(EXT): ckcfns.c ckcker.h ckcdeb.h ckcsym.h ckcasc.h ckcxla.h ckcuni.h \
 		ckuxla.h ckclib.h ckcnet.h
 
@@ -1506,12 +1524,7 @@ ckctel.$(EXT): ckcsym.h ckcdeb.h ckcker.h ckcnet.h ckctel.h ckclib.h
 # ck_off_t: ck_off_t.$(EXT)
 #	$(CC) -o ck_off_t ck_off_t.$(EXT)
 
-wart: ckwart.$(EXT)
-	$(CC) $(LNKFLAGS) -o wart ckwart.$(EXT) $(LIBS)
-
 ckcmdb.$(EXT): ckcmdb.c ckcdeb.h ckcsym.h ckclib.h
-
-ckwart.$(EXT): ckwart.c
 
 ckudia.$(EXT): ckudia.c ckcker.h ckcdeb.h ckucmd.h ckcasc.h ckcsym.h ckcsig.h \
 		ckcnet.h ckctel.h ckclib.h
@@ -1793,6 +1806,7 @@ freebsd+ssl freebsd+openssl freebsd50+openssl:
 	  *0.9.7*) OPENSSLOPTION="-DOPENSSL_097" ;; \
 	  *0.9.8*) OPENSSLOPTION="-DOPENSSL_098" ;; \
 	  *1.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_100" ;; \
+	  *3.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_300" ;; \
 	  *) OPENSSLOPTION="" ;; \
 	esac; \
 	HAVE_DES=''; \
@@ -1829,8 +1843,8 @@ freebsd+ssl freebsd+openssl freebsd50+openssl:
 #OK: (many more up through NetBSD 9.2)
 #OK: NetBSD 8.x
 #OK: 2020/08/24 NetBSD 9.0
+#OK: 2022/10/02 NetBSD 9.3
 # `uname -r | grep "[6789].[0-9]" > /dev/null && echo '-DTIMEH'`
-
 netbsd netbsd2 netbsd15 netbsd16 old-netbsd:
 	@echo Making C-Kermit $(CKVER) for NetBSD `uname -r` with curses...
 	$(MAKE) CC=$(CC) CC2=$(CC2) xermit KTARGET=$${KTARGET:-$(@)} \
@@ -1887,12 +1901,16 @@ netbsd-nodeprecated: \
 #NetBSD 1.4.1 or later with OpenSSL
 #OK: 2011/06/15 on NetBSD 5.1 (but not 1.5.2 with OpenSSL 0.9.5a)
 #OK: 2011/08/21 on 5.1.
+#OK (but with warnings) 2022/11/03.
+#Use "make netbsd+ssl-des" (minus DES) to get rid of DES warnings.
 netbsd+ssl netbsd+openssl:
 	@echo 'Making C-Kermit $(CKVER) for NetBSD+OpenSSL SSLLIB=$(SSLLIB)'
+	@echo 'If you get DES-related warnings try make netbsd+ssl-des'
 	@case `openssl version` in \
 	  *0.9.7*) OPENSSLOPTION="-DOPENSSL_097" ;; \
 	  *0.9.8*) OPENSSLOPTION="-DOPENSSL_098" ;; \
 	  *1.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_100" ;; \
+	  *3.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_300" ;; \
 	  *) OPENSSLOPTION="" ;; \
 	esac; \
 	HAVE_DES=''; \
@@ -1904,6 +1922,52 @@ netbsd+ssl netbsd+openssl:
 		echo "HAVE DES"; \
 	      else echo "NO DES"; \
 	fi; \
+	$(MAKE) netbsd KTARGET=$${KTARGET:-$(@)} "CC = $(CC)" "CC2 = $(CC2)" \
+	"KFLAGS= -DCK_AUTHENTICATION -DCK_ENCRYPTION -DCK_CAST $$HAVE_DES \
+	-DCK_SSL -DCK_PAM -DZLIB -DNO_DCL_INET_ATON $$OPENSSLOPTION \
+	-I/usr/include/des $(KFLAGS)" "LNKFLAGS = $(LNKFLAGS)" \
+	"LIBS= -L/usr/pkg/lib -R/usr/pkg/lib -lssl $$DES_LIB -lcurses \
+	-lcrypto -lcrypt -lz -lm -lpam -lutil $(LIBS)"
+
+# ONLY ON PANIX5, which, as of 16 November 2022, has OpenSSL3 in a nonstandard
+# place because the production version, 1.1.1g is installed in the normal
+# place, so have to "export LD_LIBRARY_PATH=/usr/local/openssl3/lib"; adding
+# these to the this target doesn't work:
+# 	"LD_LIBRARY_PATH=/usr/local/openssl3/lib \
+#	"LD_RUN_PATH=/usr/local/openssl3/lib \
+# But all this is only because we're doing an end-run around the production
+# SSL libs.  If SSL3 is installed as the production version, the regular
+# netbsd+ssl target should work.
+#
+netbsd+ssl3:
+	@echo 'Making C-Kermit $(CKVER) for NetBSD+OpenSSL SSLLIB=$(SSLLIB)'
+	@case `openssl version` in \
+	  *0.9.7*) OPENSSLOPTION="-DOPENSSL_097" ;; \
+	  *0.9.8*) OPENSSLOPTION="-DOPENSSL_098" ;; \
+	  *1.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_100" ;; \
+	  *3.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_300" ;; \
+	  *) OPENSSLOPTION="" ;; \
+	esac; \
+	HAVE_DES=''; \
+	$(MAKE) netbsd KTARGET=$${KTARGET:-$(@)} "CC = $(CC)" "CC2 = $(CC2)" \
+	"KFLAGS=-DCK_AUTHENTICATION -DCK_ENCRYPTION -DCK_CAST $$HAVE_DES \
+	-DCK_SSL -DCK_PAM -DZLIB -DNO_DCL_INET_ATON $$OPENSSLOPTION \
+	-I/usr/local/openssl3/include $(KFLAGS)" \
+	"LNKFLAGS = -L/usr/local/openssl3/lib $(LNKFLAGS)" \
+	"LIBS= -lssl -lcurses -R/usr/pkg/lib -lcrypto -lcrypt -lz -lm -lpam \
+	-lutil -W $(LIBS)"
+
+netbsd+ssl-des:
+	@echo 'Making C-Kermit $(CKVER) for NetBSD+OpenSSL SSLLIB=$(SSLLIB)'
+	@case `openssl version` in \
+	  *0.9.7*) OPENSSLOPTION="-DOPENSSL_097" ;; \
+	  *0.9.8*) OPENSSLOPTION="-DOPENSSL_098" ;; \
+	  *1.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_100" ;; \
+	  *3.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_300" ;; \
+	  *) OPENSSLOPTION="" ;; \
+	esac; \
+	HAVE_DES=''; \
+	DES_LIB=''; \
 	$(MAKE) netbsd KTARGET=$${KTARGET:-$(@)} "CC = $(CC)" "CC2 = $(CC2)" \
 	"KFLAGS= -DCK_AUTHENTICATION -DCK_ENCRYPTION -DCK_CAST $$HAVE_DES \
 	-DCK_SSL -DCK_PAM -DZLIB -DNO_DCL_INET_ATON $$OPENSSLOPTION \
@@ -1921,6 +1985,7 @@ netbsd+krb5:
 	  *0.9.7*) OPENSSLOPTION="-DOPENSSL_097" ;; \
 	  *0.9.8*) OPENSSLOPTION="-DOPENSSL_098" ;; \
 	  *1.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_100" ;; \
+	  *3.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_300" ;; \
 	  *) OPENSSLOPTION="" ;; \
 	esac; \
 	HAVE_DES=''; \
@@ -1939,6 +2004,111 @@ netbsd+krb5:
 	"LIBS= $(K5LIB) -L/usr/pkg/lib -R/usr/pkg/lib -lcurses $$DES_LIB \
 	-lcrypto -lgssapi -lkrb5 -lm -lutil $(LIBS)"
 
+# This target added 24 Nov 2022, based on linux+krb5-new.
+# This is for Heimdal Kerberos, not MIT.
+# It doesn't work.  - fdc Thu Nov 24 19:15:47 2022
+netbsd+krb5-new:
+	@echo 'Making C-Kermit $(CKVER) for NetBSD with Kerberos 5...'
+	@case `openssl version` in \
+	  *0.9.7*) OPENSSLOPTION="-DOPENSSL_097" ;; \
+	  *0.9.8*) OPENSSLOPTION="-DOPENSSL_098" ;; \
+	  *1.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_100" ;; \
+	  *3.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_300" ;; \
+	  *) OPENSSLOPTION="" ;; \
+	esac; \
+	K5LIB=''; \
+	if ld -lkrb5 > /dev/null 2> /dev/null; then \
+	  K5LIB='-lkrb5'; else \
+	  echo "Failed - Can't find Kerberos 5 library" ; exit 2; \
+	fi; \
+	KRB5_H=''; \
+	KRB5_KRB5_H=''; \
+	if test -f /usr/include/krb5/krb.h; then \
+	    KRB5_H=-DKRB5_H; \
+	fi; \
+	CRYPT_H=''; \
+	if test -f /usr/include/crypt.h; then \
+	  CRYPT_H='-DCRYPT_H'; \
+	fi; \
+	LIBCRYPT=''; \
+	if ld -lcrypt > /dev/null 2> /dev/null; then \
+	  LIBCRYPT='-lcrypt'; \
+	fi; \
+	LIBCRYPTO=''; \
+	if ld -lcrypto > /dev/null 2> /dev/null; then \
+	  LIBCRYPTO='-lcrypto'; \
+	fi; \
+	LIBK5CRYPTO=''; \
+	if ld -lk5crypto > /dev/null 2> /dev/null; then \
+	  LIBK5CRYPTO='-lk5crypto'; \
+	fi; \
+	HAVE_DES=''; \
+	if ld -ldes > /dev/null 2> /dev/null; then \
+	  LIBDES='-ldes'; \
+	  HAVE_DES='-DCK_DES -DLIBDES'; \
+	fi; \
+	XX_COM_ERR=H''; \
+	K5_COM_ERR_H=''; \
+	ET_COM_ERR_H=''; \
+	COM_ERR_LIB=''; \
+	if ld -lcom_err > /dev/null 2> /dev/null; then \
+	  if test -f /usr/include/krb5/com_err.h; then  \
+	    COM_ERR_LIB='-lcom_err'; \
+	    COM_ERR_H='-DK5_COM_ERR_H'; \
+	  else if test -f /usr/include/et/com_err.h; then  \
+	    COM_ERR_LIB='-lcom_err'; \
+	    COM_ERR_H='-DET_COM_ERR_H'; \
+	  else if test -f /usr/include/com_err.h; then  \
+	    COM_ERR_LIB='-lcom_err'; \
+	    COM_ERR_H='-DXX_COM_ERR_H'; \
+	   fi; \
+	  fi; \
+	 fi; \
+	fi; \
+	GSSAPILIB=''; \
+	HAVE_GSSAPI=''; \
+	if name=`locate libgssapi | grep ^/usr/lib | head -1`; then \
+	  echo name=$$name; \
+	  path=$${name%/*}; \
+	  echo PATH=$$path; \
+	  GSSAPILIB=$$(basename $$name); \
+	  echo GSSAPILIB=$$GSSAPILIB ; \
+	  HAVE_GSSAPI='-DHAVE_GSSAPI'; \
+	fi ; \
+	if [ -z "$$LD_LIBRARY_PATH" ] ; then \
+	  export LD_LIBRARY_PATH=$$path ; else \
+	  export LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:$$path; \
+	  HAVE_GSSAPI='-DHAVE_GSSAPI'; \
+	fi; \
+	if ls $${path}/libgssapi_krb5.* >/dev/null 2>/dev/null; then \
+	  echo HAVE libgssapi_krb5 ; \
+	  GSSAPILIB=-lgssapi_krb5 ;  else \
+	  if ls $${path}/libgssapi.* >/dev/null 2>/dev/null; then \
+	    GSSAPILIB=-lgssapi ; \
+	  fi; \
+	fi; \
+	echo GSSAPILIB=$GSSAPILIB; \
+	echo LD_LIBRARY_PATH=$$LD_LIBRARY_PATH; \
+	if ld -lggssapi_krb5 > /dev/null 2> /dev/null; then \
+	  GSSAPILIB='-lgssapi_krb5'; \
+	  HAVE_GSSAPI='-DHAVE_GSSAPI'; \
+	  echo GSSAPILIB-1=$$GSSAPILIB; \
+	else if ld -lggssapi > /dev/null 2> /dev/null; then \
+	  GSSAPILIB='-lgssapi'; \
+	  HAVE_GSSAPI='-DHAVE_GSSAPI'; \
+	  echo GSSAPILIB-2=$$GSSAPILIB; \
+	 fi; \
+	fi; \
+	echo GSSAPILIB=$$GSSAPILIB; \
+	$(MAKE) netbsd KTARGET=$${KTARGET:-$(@)} "CC = $(CC)" "CC2 = $(CC2)" \
+	"KFLAGS= -DCK_AUTHENTICATION -DCK_ENCRYPTION -DCK_KERBEROS -DKRB5 \
+	-DCK_CAST $$HAVE_DES $$CRYPT_H $$COM_ERR_H $$KRB5_H \
+	-I/usr/include -I/usr/include/et /$(KFLAGS)" \
+	"LNKFLAGS = $(LNKFLAGS)" \
+	"LIBS=  $$LIBCRYPT $$LIBCRYPTO $$LIBK5CRYPTO $$LIBDES $$COM_ERR_LIB \
+	$$K5LIB $$GSSAPILIB $(K5LIB) -L/usr/pkg/lib -R/usr/pkg/lib \
+	-lcurses $$DES_LIB -lm -lutil $(LIBS)"
+
 # NetBSD - With Kerberos 5 and SSL and Zlib.
 # OK: 2011/08/21 on 5.1 with MIT Kerberos.
 netbsd+krb5+ssl netbsd+krb5+openssl+zlib:
@@ -1947,6 +2117,7 @@ netbsd+krb5+ssl netbsd+krb5+openssl+zlib:
 	  *0.9.7*) OPENSSLOPTION="-DOPENSSL_097" ;; \
 	  *0.9.8*) OPENSSLOPTION="-DOPENSSL_098" ;; \
 	  *1.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_100" ;; \
+	  *3.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_300" ;; \
 	  *) OPENSSLOPTION="" ;; \
 	esac; \
 	HAVE_DES=''; \
@@ -2237,6 +2408,34 @@ macos:
 	-DNOUUCP -O -DHERALD=\"\\\" $${MACOSNAME} $${MACOSV}\\\"\" \
 	-DCKCPU=\"\\\"$${MACCPU}\\\"\" \
 	$(KFLAGS)" "LIBS= -lncurses -lresolv $(LIBS)"
+
+# Experimental.  2022-11-30  SMS.
+macos+ssl macos+openssl:
+	if test -n "$(KZLIBDIR)" ; then \
+	   ZLIBDIR="$(KZLIBDIR)" ; \
+	else \
+	   ZLIBDIR='/usr/local/lib' ; \
+	fi ; \
+	case "$(KTARGET)" in \
+	   *-zlib*) ZLIBFLAG='' ; ZLIBOPT='' ;; \
+	   *) ZLIBFLAG='-DZLIB' ; ZLIBOPT="-L $$ZLIBDIR -lz" ;; \
+	esac ; \
+	case `openssl version` in \
+	  *0.9.7*) OPENSSLOPTION="-DOPENSSL_097" ;; \
+	  *0.9.8*) OPENSSLOPTION="-DOPENSSL_098" ;; \
+	  *1.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_100" ;; \
+	  *3.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_300" ;; \
+	  *) OPENSSLOPTION="" ;; \
+	esac ; \
+	SSLINC=$${KSSLINC:-$(SSLINC)}; \
+	SSLLIB=$${KSSLLIB:-$(SSLLIB)}; \
+	$(MAKE) CC=$(CC) CC2=$(CC2) macos KTARGET=$${KTARGET:-$(@)} \
+	"KFLAGS=-DCK_AUTHENTICATION -DCK_SSL \
+	$$OPENSSLOPTION $$ZLIBFLAG $$SSLINC" \
+	"LIBS= -lncurses -lresolv $$SSLLIB -lssl -lcrypto $$ZLIBOPT $(KLIBS)"
+
+macos+ssl-zlib macos+openssl-zlib:
+	$(MAKE) macos+ssl KTARGET=$${KTARGET:-$(@)}
 
 # Trial using the Homebrew install of krb5 and openssl
 # (newer versions of macOS have dropped the Kerberos5 include
@@ -2834,7 +3033,6 @@ next33:
 
 #OPENSTEP 4.2 for Sparc, m680x0, HP PA-RISC, and Intel.
 #Includes fullscreen file transfer display and TCP/IP.
-#ckcpro.c compiled without optimization because it crashes the compiler.
 openstep42:
 	@echo Making C-Kermit $(CKVER) for OPENSTEP 4.2...
 	$(MAKE) ckcpro.$(EXT) \
@@ -3417,11 +3615,12 @@ sunos4x25:
 #Uses Honey DanBer UUCP.  Requires presence of /usr/spool/locks directory.
 # /var/spool/ should be a symbolic link to  /usr/spool/.
 # ... or 'make xermit "CC= /usr/ucb/cc " \'
+# Uses bundled Sun C compiler, pre-ANSI, no version number.
 # Note: "xermit" means use the select() version of the CONNECT module.
-# Note for C-Kermit 9.0: Reportedly 'you need to modify the sys/ioctl.h
-# include file, i.e. comment out the "struct winsize" and "struct
-# ttysize". Otherwise there will be a conflict with sys/ttycom.h (included by
-# termios.h) which also declares these structs. But you need both includes.'
+# Note2: ckutio.c includes both <termios.h> and <sys/ioctl.h> and these
+# two header files each define the same symbols: ECHO, NL0, NL1, TAB0, etc,
+# because the #define's aren't enclosed in #indef ECHO..#endif, etc.
+# The warnings are unavoidable but harmless.  Last built: 27 October 2022.
 sunos41:
 	@echo Making C-Kermit $(CKVER) for SunOS 4.1 / BSD...
 	$(MAKE) xermit KTARGET=$${KTARGET:-$(@)} \
@@ -4008,6 +4207,7 @@ solaris9g+krb5+ssl solaris10g+krb5+ssl solaris11g+krb5+ssl:
 	  *0.9.7*) OPENSSLOPTION="-DOPENSSL_097" ;; \
 	  *0.9.8*) OPENSSLOPTION="-DOPENSSL_098" ;; \
 	  *1.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_100" ;; \
+	  *3.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_300" ;; \
 	  *) OPENSSLOPTION="" ;; \
 	esac ; \
 	HAVE_DES=''; \
@@ -4096,6 +4296,7 @@ solaris9+openssl solaris10+openssl solaris11+openssl:
 	  *0.9.7*) OPENSSLOPTION="-DOPENSSL_097" ;; \
 	  *0.9.8*) OPENSSLOPTION="-DOPENSSL_098" ;; \
 	  *1.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_100" ;; \
+	  *3.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_300" ;; \
 	  *) OPENSSLOPTION="" ;; \
 	esac ; \
 	HAVE_DES=''; \
@@ -4124,6 +4325,7 @@ solaris9g+openssl solaris10g+openssl solaris11g+openssl:
 	  *0.9.7*) OPENSSLOPTION="-DOPENSSL_097" ;; \
 	  *0.9.8*) OPENSSLOPTION="-DOPENSSL_098" ;; \
 	  *1.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_100" ;; \
+	  *3.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_300" ;; \
 	  *) OPENSSLOPTION="" ;; \
 	esac ; \
 	HAVE_DES=''; \
@@ -4150,6 +4352,7 @@ solaris9g+openssl+forward_x:
 	  *0.9.7*) OPENSSLOPTION="-DOPENSSL_097" ;; \
 	  *0.9.8*) OPENSSLOPTION="-DOPENSSL_098" ;; \
 	  *1.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_100" ;; \
+	  *3.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_300" ;; \
 	  *) OPENSSLOPTION="" ;; \
 	esac ; case `uname -r` in \
 	  5.9) SOLARISVERSION="-DSOLARIS9" ;; \
@@ -4334,6 +4537,9 @@ apollobsd:
 	"CFLAGS= -DNOFILEH -DBSD4 -DAPOLLOBSD -DNOLEARN $(KFLAGS) -Uaegis"
 
 #Version 7 Unix (see comments near top of makefile)
+#-DNOSYSLOG -DNOHELP added in October 2022, the latter because it was 
+#taking hours to compile ckuus2.c.  Anyway the build failed later with with 
+#an assembler error: "Unexpected end of file writing the interpass tmp file"
 v7:
 	@echo Making C-Kermit $(CKVER) for UNIX Version 7.
 	@echo Read the makefile if you have trouble with this...
@@ -4341,7 +4547,21 @@ v7:
 	"CFLAGS=-DV7 -DPROCNAME=\\\"$(PROC)\\\" \
 	-DBOOTNAME=\\\"$(BOOTFILE)\\\" -DNPROCNAME=\\\"$(NPROC)\\\" \
 	-DNPTYPE=$(NPTYPE) $(DIRECT) -DO_RDWR=2 -DO_NDELAY=0 -DO_SCCS_ID \
-	-DNOLEARN $(KFLAGS)"
+	-DNOLEARN -DNOSYSLOG -DNOHELP $(KFLAGS)"
+
+#Version 7 Unix minumum size - commandline only, no interactive commands.
+# See the V7 section of ckcdeb.h for all the NOxxx definitions because
+# they can't all be put on the command line: "too many -D options,
+# ignoring -DNOxxx".  Some of these -DNO items are to skip over correct
+# C code that the compiler erroneously flags as errors.
+# 2 November 2022
+v7min:
+	@echo Making C-Kermit $(CKVER) for UNIX Version 7 smallest possible.
+	$(MAKE) wermit KTARGET=$${KTARGET:-$(@)} \
+	"CFLAGS=-DV7 -DPROCNAME=\\\"$(PROC)\\\" \
+	-DBOOTNAME=\\\"$(BOOTFILE)\\\" -DNPROCNAME=\\\"$(NPROC)\\\" \
+	-DNPTYPE=$(NPTYPE) $(DIRECT) -DO_RDWR=2 -DO_NDELAY=0 -DO_SCCS_ID \
+	-DV7MIN $(KFLAGS)"
 
 #AT&T UNIX System V R3, signal() is void rather than int.
 #Uses dirent.h and Honey DanBer UUCP.
@@ -6033,7 +6253,7 @@ hpux1000o+:
 #To overwrite the default SSLLIB and SSLINC settings you can also use the
 #command-line variable KSSLLIB and KSSLINC like:
 #make hpux1000o+openssl KSSLLIB=-L/opt/openssl/lib KSSLINC=-I/...
-#Ditto for the Zlib location.
+#To specify the path for the zlib library: KZLIBDIR=dir
 #This entry works for C-Kermit 8.0.206 on HP-UX 10.20 + 11.11
 #with OpenSSL 0.9.6 + 0.9.7
 #NOTE: an ANSI C compiler is required for the SSL interface.  If you don't
@@ -6045,20 +6265,31 @@ hpux1000o+ssl hpux1000o+openssl:
 	        KENTRY=hpux1000gcc ;; \
 	   *)   KENTRY=hpux1000o ;; \
 	esac ; \
+	if test -n "$(KZLIBDIR)" ; then \
+	   ZLIBDIR="$(KZLIBDIR)" ; \
+	else \
+	   ZLIBDIR='/usr/local/lib' ; \
+	fi ; \
 	case "$(KTARGET)" in \
-	   *-zlib*) \
-	        DZLIB= LZLIB= ;; \
-	   *)   DZLIB=-DZLIB LZLIB='-L/opt/zlib/lib -lz' ;; \
+	   *-zlib*) ZLIBFLAG='' ; ZLIBOPT='' ;; \
+	   *) ZLIBFLAG='-DZLIB' ; ZLIBOPT="-L $$ZLIBDIR -lz" ;; \
+	esac ; \
+	case `openssl version` in \
+	  *0.9.7*) OPENSSLOPTION="-DOPENSSL_097" ;; \
+	  *0.9.8*) OPENSSLOPTION="-DOPENSSL_098" ;; \
+	  *1.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_100" ;; \
+	  *3.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_300" ;; \
+	  *) OPENSSLOPTION="" ;; \
 	esac ; \
 	SSLINC=$${KSSLINC:-$(SSLINC)}; \
 	SSLLIB=$${KSSLLIB:-$(SSLLIB)}; \
 	MESSAGE1="and with OpenSSL $(MESSAGE1)" \
 	$(MAKE) $$KENTRY KTARGET=$${KTARGET:-$(@)} \
-	KFLAGS="-DCK_AUTHENTICATION -DCK_SSL -DOPENSSL_097 $$DZLIB \
+	KFLAGS="-DCK_AUTHENTICATION -DCK_SSL $$OPENSSLOPTION $$ZLIBFLAG \
 	$$SSLINC $(KFLAGS)" \
 	KLIBS="$(KLIBS) \
 	$$SSLLIB -lssl -lcrypto \
-	$$LZLIB \
+	$$ZLIBOPT \
 	"
 
 # Ditto but without Zlib:
@@ -6195,7 +6426,6 @@ android:
 # By the way, the trick for testing if a lib exists ("if ld -lncurses ...")
 # might seem crazy but it works everywhere, whereas the more appropriate test
 # ("if locate libncurses") is not necessarily available on all Linuxes.
-#
 linuxa:
 	@echo 'Making C-Kermit $(CKVER) for Linux 1.2 or later...'
 	@echo 'IMPORTANT: Read the comments in the linux section of the'
@@ -6231,13 +6461,13 @@ linuxp:
 #capable of accessing, sending, receiving, and managing long (> 2GB) files.
 #On 64-bit platforms, it does no harm.
 #
-# The first clause regarding errno is new to 9.0.305 Alpha.03 and is an
-# attempt to aid in the decision to include "extern int errno" in the source
-# files by supplying a symbol DCL_ERRNO if errno is not declared or defined
-# in any header files in the /usr/include tree.
+# The clause regarding errno includes "extern int errno" in the source files
+# by supplying a symbol DCL_ERRNO if errno is not declared or defined in any
+# header files in the /usr/include tree.
 #
 # This target uses the computer's default C compiler, whatever it is
-# (usually gcc, which sometimes can be invoked as cc).
+# (usually gcc, but beware: it might also be clang, which is extremely
+# hostile to "old" code.
 #
 linux gnu-linux:
 	@echo "Making C-Kermit for `uname -spm` $(CC) \
@@ -6249,17 +6479,16 @@ linux gnu-linux:
 	  > /dev/null 2> /dev/null; \
 	then DCL_ERRNO=''; \
 	fi ; \
-	if test \
-	`grep grantpt /usr/include/*.h /usr/include/*.h | wc -l` -gt 0; \
+	if test `grep grantpt /usr/include/*.h | wc -l` -gt 0; \
 	  then if test -c /dev/ptmx; \
 	    then HAVE_PTMX='-DHAVE_PTMX'; \
 	    else HAVE_PTMX=''; \
 	  fi; \
 	fi ; \
-        HAVE_OPENPTY=''; \
+	HAVE_OPENPTY=''; \
 	if test `grep openpty /usr/include/*.h | wc -l` -gt 0; then \
-          HAVE_OPENPTY='-DHAVE_OPENPTY';  \
-        fi; \
+	  HAVE_OPENPTY='-DHAVE_OPENPTY';  \
+	fi; \
 	if test -n '$$HAVE_OPENPTY'; \
 	  then if ld -lutil > /dev/null 2> /dev/null; then \
 	    LIB_UTIL='-lutil'; \
@@ -6331,7 +6560,36 @@ linuxgcc:
 
 # Force compilation with clang
 linux-clang linuxclang:
-	$(MAKE) "CC=clang" "CC2=clang" linux
+	$(MAKE) CC=clang CC2=clang linux
+
+# Linux clang compilation with implicit function declaration warnings.
+# Clang 12 or later required to see the warnings.  In clang 16 (at least
+# the first release of it) the implicit function declaration is fatal error.
+linux-clang-wimplicit:
+	$(MAKE) CC=clang CC2=clang -Wimplicit-function-declaration linux
+
+# Linux clang compilation in C89 mode...
+# For me this bombed out instantly in clang 3.4.2 with "ckcsig.h:52:9:
+# typedef sigjmp_buf ckjmpbuf; error: unknown type name 'sigjmp_buf'"
+# It happened on both RHEL 6.1 (old) and Ubuntu 20.04.1 (recent).
+# Needs testing in clang 12 or later, and especially in Clang 16.
+linux-clang-c89:
+	$(MAKE) "CC=clang -std=c89" "CC2=clang" linux
+
+# Linux clang compilation in gnu89 mode. For me this compiled successfully 
+# in clang 3.4.2 but with lots of "if && ||" warnings.
+# Ditto in clang 10.0.0 but no "if && ||" warnings.
+# Needs testing in clang 12 or later.
+linux-clang-gnu89:
+	$(MAKE) "CC=clang -std=gnu89" "CC2=clang" linux
+
+# Minimum size for Linux - many features deselected.
+# No interactive commands, no scripting, no character sets, etc.
+# About 1/7 the size of the normal version.
+# 3 November 2022
+linuxmin:
+	@echo 'Making C-Kermit $(CKVER) for Linux many features deselected..'
+	$(MAKE) linux "KFLAGS=-DV7MIN"
 
 #PREVIOUS LINUX TARGET
 #Use this target if you have trouble with "make linux".
@@ -6465,6 +6723,11 @@ linux+shadow+pam:
 linuxns:
 	$(MAKE) linux KTARGET=$${KTARGET:-$(@)} KFLAGS=-DNO_SYS_SELECT_H
 
+# Linux build with no curses (restored 24 November 2022)
+linuxnc:
+	$(MAKE) linux KTARGET=$${KTARGET:-$(@)} \
+	KFLAGS="-DNOCURSES -UCK_CURSES"
+
 # Linux-script-only:
 # A minimum-size version for Linux that does only scripting and
 # serial communication -- no networks, no file transfer, no security.
@@ -6493,6 +6756,7 @@ linux+krb5:
 	  *0.9.7*) OPENSSLOPTION="-DOPENSSL_097" ;; \
 	  *0.9.8*) OPENSSLOPTION="-DOPENSSL_098" ;; \
 	  *1.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_100" ;; \
+	  *3.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_300" ;; \
 	  *) OPENSSLOPTION="" ;; \
 	esac; \
 	HAVE_DES=''; \
@@ -6510,27 +6774,147 @@ linux+krb5:
 	else if ls /usr/lib/libk5crypto* > /dev/null 2> /dev/null; then \
 		K5CRYPTO='-lk5crypto'; \
 	else if ls /usr/lib64/libk5crypto* > /dev/null 2> /dev/null; then \
-	K5CRYPTO='-lk5crypto'; \
-	fi; fi; fi; \
+		K5CRYPTO='-lk5crypto'; \
+	else if ls usr/lib/x86_64-linux-gnu/libk5crypto* \
+		> /dev/null 2> /dev/null; then \
+		K5CRYPTO='-lk5crypto'; \
+	fi; fi; fi; fi; \
 	COM_ERR=''; \
 	if ls /lib/libcom_err* > /dev/null 2> /dev/null; then \
 		COM_ERR='-lcom_err'; \
-	fi; \
+	else if ls /lib64/libcom_err* > /dev/null 2> /dev/null; then \
+		COM_ERR='-lcom_err'; \
+	else if ls /x86_64-linux-gnu/libcom_err* >/dev/null 2>/dev/null; then \
+	        COM_ERR='-lcom_err'; \
+	fi; fi; fi; \
 	GSSAPILIB='-lgssapi'; \
 	if ls /lib/libgssapi_krb5* > /dev/null 2> /dev/null; then \
 		GSSAPILIB='-lgssapi_krb5'; \
 	else if ls /usr/lib/libgssapi_krb5* > /dev/null 2> /dev/null; then \
 		GSSAPILIB='-lgssapi_krb5'; \
+	else if ls /usr/lib/x86_64-linux-gnu/libgssapi_krb5* > \
+		/dev/null 2> /dev/null; then \
+		GSSAPILIB='-lgssapi_krb5'; \
 	else K5DIR=`echo $(K5LIB) | sed 's|-L||'`; \
 		if ls $$K5DIR/libgssapi_krb5* > /dev/null 2> /dev/null; then \
 			GSSAPILIB='-lgssapi_krb5'; \
-	fi; fi; fi; \
+	fi; fi; fi; fi; \
 	$(MAKE) linux KTARGET=$${KTARGET:-$(@)} "CC = gcc" "CC2 = gcc" \
 	"KFLAGS= -DCK_AUTHENTICATION -DCK_KERBEROS -DKRB5 $$OPENSSLOPTION \
 	-DCK_ENCRYPTION $$HAVE_DES $(K5INC) $(K5INC)/krb5 \
 	-I/usr/include/et $(KFLAGS)" "LNKFLAGS = $(LNKFLAGS)" \
-	"LIBS = $(K5LIB) $$DES_LIB -lcrypto $$GSSAPILIB -lkrb5 \
-	$$K5CRYPTO $$COM_ERR $(LIBS)"
+	"LIBS = $(K5LIB) $$DES_LIB -lcrypto $$COM_ERR \
+	$$GSSAPILIB -lkrb5 $$K5CRYPTO $(LIBS)"
+
+# The previous linux+krb was a big mess, with hardwired pathnames for all the
+# possible places the Kerberos libs might be.  This version just relies on the
+# linker to find them.  It also handles the frequent situation where the
+# gssapi library is install but the linker doesn't know about it.  Thanks to
+# Peter Eichhorn for a great deal of help with the syntax in the gssapi
+# section! - fdc 24 November 2022
+linux+krb5-new:
+	@echo 'NEW Making C-Kermit $(CKVER) for Linux with Kerberos 5...'
+	@case `openssl version` in \
+	  *0.9.7*) OPENSSLOPTION="-DOPENSSL_097" ;; \
+	  *0.9.8*) OPENSSLOPTION="-DOPENSSL_098" ;; \
+	  *1.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_100" ;; \
+	  *3.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_300" ;; \
+	  *) OPENSSLOPTION="" ;; \
+	esac; \
+	K5LIB=''; \
+	if ld -lkrb5 > /dev/null 2> /dev/null; then \
+	  K5LIB='-lkrb5'; else \
+	  echo "Failed - Can't find Kerberos 5 library" ; exit 2; \
+	fi; \
+	KRB5_H=''; \
+	if test -f /usr/include/krb5/krb.h; then \
+	    KRB5_H=-DKRB5_H; \
+	fi; \
+	CRYPT_H=''; \
+	if test -f /usr/include/crypt.h; then \
+	  CRYPT_H='-DCRYPT_H'; \
+	fi; \
+	LIBCRYPT=''; \
+	if ld -lcrypt > /dev/null 2> /dev/null; then \
+	  LIBCRYPT='-lcrypt'; \
+	fi; \
+	LIBCRYPTO=''; \
+	if ld -lcrypto > /dev/null 2> /dev/null; then \
+	  LIBCRYPTO='-lcrypto'; \
+	fi; \
+	LIBK5CRYPTO=''; \
+	if ld -lk5crypto > /dev/null 2> /dev/null; then \
+	  LIBK5CRYPTO='-lk5crypto'; \
+	fi; \
+	HAVE_DES=''; \
+	if ld -ldes > /dev/null 2> /dev/null; then \
+	  LIBDES='-ldes'; \
+	  HAVE_DES='-DCK_DES -DLIBDES'; \
+	fi; \
+	XX_COM_ERR=H''; \
+	K5_COM_ERR_H=''; \
+	ET_COM_ERR_H=''; \
+	COM_ERR_LIB=''; \
+	if ld -lcom_err > /dev/null 2> /dev/null; then \
+	  if test -f /usr/include/krb5/com_err.h; then  \
+	    COM_ERR_LIB='-lcom_err'; \
+	    COM_ERR_H='-DK5_COM_ERR_H'; \
+	  else if test -f /usr/include/et/com_err.h; then  \
+	    COM_ERR_LIB='-lcom_err'; \
+	    COM_ERR_H='-DET_COM_ERR_H'; \
+	  else if test -f /usr/include/com_err.h; then  \
+	    COM_ERR_LIB='-lcom_err'; \
+	    COM_ERR_H='-DXX_COM_ERR_H'; \
+	   fi; \
+	  fi; \
+	 fi; \
+	fi; \
+	GSSAPILIB=''; \
+	HAVE_GSSAPI=''; \
+	if name=`locate libgssapi | grep ^/usr/lib | head -1`; then \
+	  echo name=$$name; \
+	  path=$${name%/*}; \
+	  echo PATH=$$path; \
+	  GSSAPILIB=$$(basename $$name); \
+	  echo GSSAPILIB=$$GSSAPILIB ; \
+	  HAVE_GSSAPI='-DHAVE_GSSAPI'; \
+	fi ; \
+	if [ -z "$$LD_LIBRARY_PATH" ] ; then \
+	  export LD_LIBRARY_PATH=$$path ; else \
+	  export LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:$$path; \
+	  HAVE_GSSAPI='-DHAVE_GSSAPI'; \
+	fi; \
+	if ls $${path}/libgssapi_krb5.* >/dev/null 2>/dev/null; then \
+	  echo HAVE libgssapi_krb5 ; \
+	  GSSAPILIB=-lgssapi_krb5 ;  else \
+	  if ls $${path}/libgssapi.* >/dev/null 2>/dev/null; then \
+	  GSSAPILIB=-lgssapi ; \
+	 fi; \
+	fi; \
+	echo GSSAPILIB=$GSSAPILIB; \
+	echo LD_LIBRARY_PATH=$$LD_LIBRARY_PATH; \
+	if ld -lggssapi_krb5 > /dev/null 2> /dev/null; then \
+	  GSSAPILIB='-lgssapi_krb5'; \
+	  HAVE_GSSAPI='-DHAVE_GSSAPI'; \
+	  echo GSSAPILIB-1=$$GSSAPILIB; \
+	else if ld -lggssapi_krb5 > /dev/null 2> /dev/null; then \
+	  GSSAPILIB='-lgssapi'; \
+	  HAVE_GSSAPI='-DHAVE_GSSAPI'; \
+	  echo GSSAPILIB-2=$$GSSAPILIB; \
+	 fi; \
+	fi; \
+	echo GSSAPILIB=$$GSSAPILIB; \
+	$(MAKE) linux KTARGET=$${KTARGET:-$(@)} "CC = gcc" "CC2 = gcc" \
+	"KFLAGS= -DCK_AUTHENTICATION -DCK_ENCRYPTION -DCK_KERBEROS -DKRB5 \
+	$$HAVE_GSSAPI $$HAVE_DES $$OPENSSLOPTION $$CRYPT_H $$COM_ERR_H \
+	$$KRB5_H $(KFLAGS)" \
+	"LNKFLAGS = $(LNKFLAGS)" \
+	"LIBS = $$LIBCRYPT $$LIBCRYPTO $$LIBK5CRYPTO $$LIBDES $$COM_ERR_LIB \
+	$$K5LIB $$GSSAPILIB  $(LIBS)"
+
+# Linux with Kerberos 5 compiled with Clang
+linux+krb5-clang:
+	$(MAKE) "CC=clang" "CC2=clang" linux+krb5
 
 # Linux with Kerberos 5 and Kerberos 4.
 # Use "make linux+krb5 KFLAGS=-DNO_KRB5_INIT_ETS" if necessary.
@@ -6559,6 +6943,7 @@ linux+ssl linux+openssl linux+openssl+zlib+shadow+pam linux+openssl+shadow:
 	  *0.9.7*) OPENSSLOPTION="-DOPENSSL_097" ;; \
 	  *0.9.8*) OPENSSLOPTION="-DOPENSSL_098" ;; \
 	  *1.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_100" ;; \
+	  *3.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_300" ;; \
 	  *) OPENSSLOPTION="" ;; \
 	esac; \
 	HAVE_DES=''; \
@@ -6588,6 +6973,7 @@ linux+krb5+ssl linux+krb5+openssl:
 	  *0.9.7*) OPENSSLOPTION="-DOPENSSL_097" ;; \
 	  *0.9.8*) OPENSSLOPTION="-DOPENSSL_098" ;; \
 	  *1.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_100" ;; \
+	  *3.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_300" ;; \
 	  *) OPENSSLOPTION="" ;; \
 	esac; \
 	HAVE_DES=''; \
@@ -6606,19 +6992,22 @@ linux+krb5+ssl linux+krb5+openssl:
 		K5CRYPTO='-lk5crypto'; \
 	else if ls /usr/lib64/libk5crypto* > /dev/null 2> /dev/null; then \
 		K5CRYPTO='-lk5crypto'; \
-	else if ls /usr/lib/$(MULTIARCH)/libk5crypto* > /dev/null 2> /dev/null; then \
-		K5CRYPTO='-lk5crypto'; \
+	else if ls /usr/lib/$(MULTIARCH)/libk5crypto* \
+	        > /dev/null 2> /dev/null; then K5CRYPTO='-lk5crypto'; \
 	fi; fi; fi; fi; \
 	COM_ERR=''; \
 	if ls /lib/libcom_err* > /dev/null 2> /dev/null; then \
 		COM_ERR='-lcom_err'; \
-	else if ls /lib/$(MULTIARCH)/libcom_err* > /dev/null 2> /dev/null; then \
+	else if ls /lib/$(MULTIARCH)/libcom_err* \
+	        > /dev/null 2> /dev/null; then COM_ERR='-lcom_err'; \
+	else if ls /lib64/libcom_err* > /dev/null 2> /dev/null; then \
 		COM_ERR='-lcom_err'; \
-	fi; fi; \
+	fi; fi; fi; \
 	GSSAPILIB='-lgssapi'; \
 	if ls /lib/libgssapi_krb5* > /dev/null 2> /dev/null; then \
 		GSSAPILIB='-lgssapi_krb5'; \
-	else if ls /usr/lib/$(MULTIARCH)/libgssapi_krb5* > /dev/null 2> /dev/null; then \
+	else if ls /usr/lib/$(MULTIARCH)/libgssapi_krb5* \
+	        > /dev/null 2> /dev/null; then \
 		GSSAPILIB='-lgssapi_krb5'; \
 	else K5DIR=`echo $(K5LIB) | sed 's|-L||'`; \
 		if ls $$K5DIR/libgssapi_krb5* > /dev/null 2> /dev/null; then \
@@ -6629,6 +7018,89 @@ linux+krb5+ssl linux+krb5+openssl:
 	-DCK_SSL -DCK_PAM -DZLIB -DCK_SHADOW $$OPENSSLOPTION $(SSLINC) \
 	-DCK_ENCRYPTION $$HAVE_DES $(K5INC) $(K5INC)/krb5 \
 	-I/usr/include/et $(KFLAGS)" "LNKFLAGS = $(LNKFLAGS)" \
+	"LIBS = $(K5LIB) $(SSLLIB) -lssl $$DES_LIB -lpam -lz \
+	-lcrypto $$GSSAPILIB -lkrb5 $$K5CRYPTO $$COM_ERR $(LIBS)"
+
+linux+krb5+ssl-new:
+	@echo 'Making C-Kermit $(CKVER) for Linux with Krb5 and OpenSSL...'
+	@case `openssl version` in \
+	  *0.9.7*) OPENSSLOPTION="-DOPENSSL_097" ;; \
+	  *0.9.8*) OPENSSLOPTION="-DOPENSSL_098" ;; \
+	  *1.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_100" ;; \
+	  *3.[0-9].[0-9]*) OPENSSLOPTION="-DOPENSSL_300" ;; \
+	  *) OPENSSLOPTION="" ;; \
+	esac; \
+	HAVE_DES=''; \
+	DES_LIB=''; \
+	if ls /usr/lib/libdes* > /dev/null 2> /dev/null || \
+	   ls $(SSLLIB)/libdes* > /dev/null 2> /dev/null; then \
+	      DES_LIB='-ldes425'; \
+	      HAVE_DES='-DCK_DES -DLIBDES'; \
+	      echo "HAVE DES"; \
+	   else echo "NO DES"; \
+	fi; \
+	LIBK5CRYPTO=''; \
+	if ld -lk5crypto > /dev/null 2> /dev/null; then \
+	  LIBK5CRYPTO='-lk5crypto'; \
+	fi; \
+	XX_COM_ERR=H''; \
+	K5_COM_ERR_H=''; \
+	ET_COM_ERR_H=''; \
+	COM_ERR_LIB=''; \
+	if ld -lcom_err > /dev/null 2> /dev/null; then \
+	  if test -f /usr/include/krb5/com_err.h; then  \
+	    COM_ERR_LIB='-lcom_err'; \
+	    COM_ERR_H='-DK5_COM_ERR_H'; \
+	  else if test -f /usr/include/et/com_err.h; then  \
+	    COM_ERR_LIB='-lcom_err'; \
+	    COM_ERR_H='-DET_COM_ERR_H'; \
+	  else if test -f /usr/include/com_err.h; then  \
+	    COM_ERR_LIB='-lcom_err'; \
+	    COM_ERR_H='-DXX_COM_ERR_H'; \
+	   fi; \
+	  fi; \
+	 fi; \
+	fi; \
+	GSSAPILIB=''; \
+	HAVE_GSSAPI=''; \
+	if name=`locate libgssapi | grep ^/usr/lib | head -1`; then \
+	  echo name=$$name; \
+	  path=$${name%/*}; \
+	  echo PATH=$$path; \
+	  GSSAPILIB=$$(basename $$name); \
+	  echo GSSAPILIB=$$GSSAPILIB ; \
+	  HAVE_GSSAPI='-DHAVE_GSSAPI'; \
+	fi ; \
+	if [ -z "$$LD_LIBRARY_PATH" ] ; then \
+	  export LD_LIBRARY_PATH=$$path ; else \
+	  export LD_LIBRARY_PATH=$$LD_LIBRARY_PATH:$$path; \
+	  HAVE_GSSAPI='-DHAVE_GSSAPI'; \
+	fi; \
+	if ls $${path}/libgssapi_krb5.* >/dev/null 2>/dev/null; then \
+	  echo HAVE libgssapi_krb5 ; \
+	  GSSAPILIB=-lgssapi_krb5 ;  else \
+	  if ls $${path}/libgssapi.* >/dev/null 2>/dev/null; then \
+	  GSSAPILIB=-lgssapi ; \
+	 fi; \
+	fi; \
+	echo GSSAPILIB=$GSSAPILIB; \
+	echo LD_LIBRARY_PATH=$$LD_LIBRARY_PATH; \
+	if ld -lggssapi_krb5 > /dev/null 2> /dev/null; then \
+	  GSSAPILIB='-lgssapi_krb5'; \
+	  HAVE_GSSAPI='-DHAVE_GSSAPI'; \
+	  echo GSSAPILIB-1=$$GSSAPILIB; \
+	else if ld -lggssapi_krb5 > /dev/null 2> /dev/null; then \
+	  GSSAPILIB='-lgssapi'; \
+	  HAVE_GSSAPI='-DHAVE_GSSAPI'; \
+	  echo GSSAPILIB-2=$$GSSAPILIB; \
+	 fi; \
+	fi; \
+	$(MAKE) linux KTARGET=$${KTARGET:-$(@)} "CC = gcc" "CC2 = gcc" \
+	"KFLAGS= -DCK_AUTHENTICATION -DCK_KERBEROS -DKRB5 \
+	-DCK_SSL -DCK_PAM -DZLIB -DCK_SHADOW $$OPENSSLOPTION $(SSLINC) \
+	-DCK_ENCRYPTION $$HAVE_DES $(K5INC) $(K5INC)/krb5 \
+	-I/usr/include -I/usr/include/et /$(KFLAGS)" \
+	"LNKFLAGS = $(LNKFLAGS)" \
 	"LIBS = $(K5LIB) $(SSLLIB) -lssl $$DES_LIB -lpam -lz \
 	-lcrypto $$GSSAPILIB -lkrb5 $$K5CRYPTO $$COM_ERR $(LIBS)"
 
@@ -6646,9 +7118,8 @@ linux+krb5+ssl linux+krb5+openssl:
 #Sharp Zaurus SL-5500 - Linux based
 zsl5500:
 	@echo 'Making C-Kermit $(CKVER) for Sharp Zaurus SL-5500...'
-	@touch ckcpro.c
-	@touch wart
-	$(MAKE) linuxnc KTARGET=$${KTARGET:-$(@)} "KFLAGS=-DZSL5500" \
+	$(MAKE) linuxnc        $(MAKE) linux KTARGET=$${KTARGET:-$(@)} \
+	KFLAGS="-DNOCURSES -UCK_CURSES" KTARGET=$${KTARGET:-$(@)} "KFLAGS=-DZSL5500" \
 	"CC = gcc" "CC2 = gcc"
 
 #Mklinux DR3 has horrible bug in <utmpbits.h> - see ckufio.c.
@@ -7652,6 +8123,7 @@ sco32v500:
 	"CFLAGS= -O -DDIRENT -DHDBUUCP -DSVR4 -DCK_SCOV5 -DCK_RTSCTS \
 	-DCK_CURSES -DCK_WREFRESH -DCK_NEWTERM -DSELECT -DSELECT_H \
 	-DNOGETUSERSHELL -DNOLSTAT -DNOLINKBITS -DNOSYSLOG \
+	-DNORLOGIN -DNO_PTY_XOPEN_SOURCE \
 	$(KFLAGS)" \
 	"LIBS=-lcurses $(LIBS)" "LNKFLAGS=$(LNKFLAGS)"
 
@@ -7667,6 +8139,7 @@ sco32v500net:
 	"CFLAGS= -O -DDIRENT -DHDBUUCP -DSVR4 -DCK_SCOV5 -DCK_RTSCTS \
 	-DCK_CURSES -DCK_WREFRESH -DCK_NEWTERM -DSELECT -DSELECT_H \
 	-DNOGETUSERSHELL -DNOLSTAT -DNOLINKBITS -DTCPSOCKET \
+	-DNORLOGIN -DNO_PTY_XOPEN_SOURCE \
 	-DNO_DNS_SRV $(KFLAGS)" \
 	"LIBS=-lcurses -lsocket $(LIBS)" "LNKFLAGS=$(LNKFLAGS)"
 
@@ -7682,6 +8155,7 @@ sco32v500net+ssl:
 	-DCK_CURSES -DCK_WREFRESH -DCK_NEWTERM -DSELECT -DSELECT_H \
 	-DNOGETUSERSHELL -DNOLSTAT -DNOLINKBITS -DTCPSOCKET \
 	-DNO_DNS_SRV -DCK_AUTHENTICATION -DCK_SSL -DCK_TRIGGER \
+	-DNORLOGIN -DNO_PTY_XOPEN_SOURCE \
 	$(SSLINC) $(SSLLIB) $(KFLAGS)" \
 	"LIBS=$(SSLLIB) -lcurses -lsocket -lssl -lcrypto $(LIBS)" \
 	"LNKFLAGS=$(LNKFLAGS)"
@@ -7742,14 +8216,13 @@ sco32v504net:
 	"CFLAGS= -DDIRENT -DHDBUUCP -DSVR4 -DCK_SCOV5 -DCK_RTSCTS \
 	-DCK_CURSES -DCK_WREFRESH -DCK_NEWTERM -DSELECT -DSELECT_H \
 	-DNOGETUSERSHELL -DNOLSTAT -DNOLINKBITS -DTCPSOCKET \
+	-DNORLOGIN -DNO_PTY_XOPEN_SOURCE \
 	-b elf -DSCO_OSR504 -DPOSIX -DNO_DNS_SRV $(KFLAGS)" \
 	"LIBS=-lcurses -lsocket $(LIBS)" "LNKFLAGS=$(LNKFLAGS)"
 
 #SCO OpenServer 5.0.4 with networking, gcc.
 sco32v504netgcc:
 	@echo TCP/IP networking added - using gcc...
-	@echo If gcc crashes on ckwart.c then build it by hand:
-	@echo " gcc -o wart -DCK_SCOV5 ckwart.c"
 	$(MAKE) "MAKE=$(MAKE)" sco32v500net "CC=gcc" "CC2=gcc" \
 	KTARGET=$${KTARGET:-$(@)} "KFLAGS=-DSCO_OSR504 -DPOSIX $(KFLAGS)"
 
@@ -7797,7 +8270,8 @@ sco32v505net+ssl:
 sco32v505udknet:
 	@echo TCP/IP networking added...
 	$(MAKE) "MAKE=$(MAKE)" sco32v500net KTARGET=$${KTARGET:-$(@)} \
-	"KFLAGS=-DSCO_OSR505 -DDCLTIMEVAL -DNOSHADOW -b elf -DPOSIX $(KFLAGS)"
+	"KFLAGS=-DSCO_OSR505 -DNORLOGIN -DDCLTIMEVAL -DNOSHADOW \
+	-b elf -DPOSIX $(KFLAGS)"
 
 #SCO OpenServer 5.0.5 with gcc, no networking.
 sco32v505gcc:
@@ -7816,8 +8290,6 @@ sco32v505xgcc:
 #SCO OpenServer 5.0.5 with networking, gcc.
 sco32v505netgcc:
 	@echo TCP/IP networking added - using gcc...
-	@echo If gcc crashes on ckwart.c then build it by hand:
-	@echo " gcc -o wart -DCK_SCOV5 ckwart.c"
 	$(MAKE) "MAKE=$(MAKE)" sco32v500net "CC=gcc" "CC2=gcc" \
 	KTARGET=$${KTARGET:-$(@)} \
 	"KFLAGS=-DSCO_OSR505 -DNOSHADOW -DPOSIX -funsigned-char $(KFLAGS)"
@@ -8008,7 +8480,7 @@ qnx16:
 	$(MAKE) xermit \
 	"LNKFLAGS = -2 -ml -N 26000" \
 	"CFLAGS = -2 -Oatx -zc -zt100 -ml -DQNX -DQNX16 -DNOUUCP -DNOHELP \
-	-DCK_REDIR -DSELECT -DSELECT_H -DNOJC -DNOGETUSERSHELL -DNOCSETS \
+	-DCK_REDIR -DSELECT -DSELECT_H -DNOJC -DNOGETUSERSHELL -DNO_DNS_SRV \
 	-v9.52 -DTCPSOCKET -DCK_RTSCTS -DCK_ANSIC -DNOINITGROUPS -DNOKVERBS \
 	-DNORANDOM -DNOCSETS -DNOSPL -DNOFLOAT -DPID_T=pid_t $(KFLAGS)"
 
@@ -8027,7 +8499,6 @@ qnx16_41:
 # Gets lots of compiler warnings.
 qnx_nto2+:
 	@echo 'Making C-Kermit $(CKVER) for QNX Neutrino 2+ '
-	cc -o wart ckwart.c
 	$(MAKE) xermit \
 	"CC = qcc -Vgcc_ntox86" \
 	"CC2 = qcc -Vgcc_ntox86" \
@@ -8091,8 +8562,6 @@ minix386gcc:
 	"CFLAGS= -DV7 -DMINIX -D_POSIX_SOURCE -DNOLEARN $(KFLAGS)"
 
 #MINIX - 68k version with ACK compiler.
-# If you have trouble compiling or running wart, "touch wart".
-# If it still doesn't work, "touch ckcpro.c".
 # The version configured below has many features removed, including
 # the TRANSMIT, MSEND, HELP, and SCRIPT commands, international
 # character set support, and the entire script programming language.
@@ -8108,8 +8577,7 @@ minix68k:
 	-DPID_T=pid_t -DUID_T=uid_t -DGID_T=gid_t -DSIG_V"
 
 #MINIX - 68k version with c68 compiler.
-# If you have trouble compiling or running wart, "touch wart" or
-# "touch ckcpro.c". Compiling ckudia.c (no -DNODIAL!) might fail. :-(
+# Compiling ckudia.c (no -DNODIAL!) might fail.
 # Give c68 250000 bytes of stack+heap; make sure make(1) has at least
 # 100000 chmemory.  On a 1MB Atari ST this means that the recursive
 # call of make fails due to memory shortage.  Try "make -n minixc68 >makeit",
@@ -8499,7 +8967,6 @@ rtus5r3:
 # This almost certainly doesn't work any more.
 provx1:
 	@echo 'Making C-Kermit $(CKVER) for DEC Pro-3xx, Pro/Venix 1.x...'
-	$(MAKE) wart "CFLAGS= -DPROVX1 $(KFLAGS)" "LNKFLAGS= "
 	$(MAKE) wermit "CFLAGS = -DPROVX1 -DNOFILEH -md780" \
 		"LNKFLAGS= -u _sleep -lc -md780"
 
@@ -8622,7 +9089,6 @@ zilog:
 #Whitechapel MG-1 Genix 1.3
 white:
 	@echo 'Making C-Kermit $(CKVER) for Whitechapel MG-1 Genix 1.3...'
-	@touch ckcpro.c
 	$(MAKE) wermit "CFLAGS= -DBSD4 -Dzkself()=0  $(KFLAGS)"
 
 #Pixel 1000
@@ -8768,8 +9234,8 @@ altos3:
 #MINIX - Original PC version with 64K+64K limit.
 # Reportedly, the linker (asld) can run out of space while linking.  The only
 # way around this is to make a copy of libc.a from which all modules that are
-# not used by Kermit are removed.  If you have trouble compiling or running
-# wart, "touch wart".  If that doesn't help, "touch ckcpro.c".
+# not used by Kermit are removed.
+#
 # The version configured below has no interactive command parser.
 # If you can build this version successfully, maybe there will be room for
 # a minimal interactive command parser too; try replacing -DNOICP with
@@ -8785,9 +9251,10 @@ minix:
 	-DNOSCRIPT -DNOCSETS -DNOICP -DNOSETKEY $(KFLAGS)" \
 	"LNKFLAGS= -i -T"
 
-#MINIX - PC version with 64K+64K limit, new (as yet unreleased) ACK 2.0 beta C
-#compiler, which outputs .o object files, rather than .s.  But 'make' still
-#expects .s files, so must be patched to use .o.  Tested on Minix 1.5.10.
+# MINIX - PC version with 64K+64K limit, newer ACK 2.0 beta C compiler,
+# which outputs .o object files, rather than .s.  But MINIX 'make' still 
+# expects *.s object files, so must be patched to use .o.
+# Tested on Minix 1.5.10.
 minix15:
 	@echo 'Making C-Kermit $(CKVER) for MINIX (new ACK 2.0 compiler),'
 	@echo 'no command parser...  TOTALLY UNTESTED!'
@@ -8797,25 +9264,45 @@ minix15:
 	-DNOHELP -DNODEBUG -DNOTLOG -DNOSCRIPT -DNOCSETS -DNOICP $(KFLAGS)" \
 	"LNKFLAGS= -i -T"
 
-#MINIX3 - MINIX 3.0 (no VM) - May-Aug 2005 (not sure if this ever worked...)
+#MINIX3 - MINIX 3.0
+#Uses the old fork()-based CONNECT command module ckucon.c
+#Support for select() was added to MINIX somewhere between 3.0 and 3.3;
+#it's definitely in 3.3 (see next target).
+#OK 28 November 2022 on MINIX 3.2.1 and 3.3.0.
 minix3:
 	@echo 'Making C-Kermit $(CKVER) for MINIX3...'
 	$(MAKE) wermit KTARGET=$${KTARGET:-$(@)} \
-	"CFLAGS= -DPOSIX -DNOUUCP -DNOLEARN $(KFLAGS) -DMINIX2 \
-	-DMINIX3 -DNO_PARAM_H -DNOSYSLOG -DNOGETUSERSHELL \
-	-DNOINITGROUPS -DNOFTRUNCATE -DDNOREALPATH \
-	-DTCPSOCKET -DNOTIMEZONE -DNOFTP -DNO_DNS_SRV -O"
+	"CFLAGS= -DPOSIX -DNOUUCP -DNOLEARN -DMINIX2 -DMINIX3 \
+	-DNO_PARAM_H -DNOSYSLOG -DNOGETUSERSHELL -DNOINITGROUPS \
+	-DNOFTRUNCATE -DDNOREALPATH -DTCPSOCKET -DNOTIMEZONE -DNORLOGIN \
+	-DNOFTP -DNO_DNS_SRV -DNOIKSD $(KFLAGS) -O"
+
+#MINIX3 - MINIX 3.0
+# This uses the currently (i.e. last 20-30 years) standard CONNECT
+# command code, which is based on select(), rather than the 1980s C-Kermit
+# original fork()-based method.  This target can be used on at least MINIX
+# 3.3.0, maybe also earlier MINIX 3 editions, but not MINIX 2 or earlier.
+# OK 28 November 2022 on MINIX 3.3.0
+minix3+select:
+	@echo 'Making C-Kermit $(CKVER) for MINIX3...'
+	$(MAKE) xermit KTARGET=$${KTARGET:-$(@)} \
+	"CFLAGS= -DPOSIX -DNOUUCP -DNOLEARN -DMINIX2 -DMINIX3 \
+	-DNO_PARAM_H -DNOSYSLOG -DNOGETUSERSHELL -DNOINITGROUPS \
+	-DNOFTRUNCATE -DDNOREALPATH -DTCPSOCKET -DNOTIMEZONE -DNORLOGIN \
+	-DNOFTP -DNO_DNS_SRV -DNOIKSD $(KFLAGS) -O"
 
 #MINIX315 - MINIX 3 1.5 - January 2010
+#Last tested successfully on MINIX 3.3.0 28 November 2022
 minix315:
 	@echo 'Making C-Kermit $(CKVER) for Minix 3 1.5...'
 	$(MAKE) wermit KTARGET=$${KTARGET:-$(@)} \
 	"CFLAGS= -DMINIX315 -DPOSIX -DNOUUCP -DNOJC -DNOLEARN $(KFLAGS) \
 	-DHAVE_OPENPTY -DNO_PARAM_H -DNOSYSLOG -DNOGETUSERSHELL \
 	-DSYSTIMEH -DNOINITGROUPS -DNOFTRUNCATE -DNOREALPATH \
-	-DTCPSOCKET -DNOTIMEZONE -DNO_DNS_SRV -DNOFTP -O"
+	-DNORLOGIN -DTCPSOCKET -DNOTIMEZONE -DNO_DNS_SRV -DNOFTP -O"
 
 #MINIX340 - MINIX 3.4.0 - January 2022
+#Last tested successfully on MINIX 3.3.0 28 November 2022
 minix340:
 	@echo 'Making C-Kermit $(CKVER) for Minix 3.4.0...'
 	$(MAKE) wermit KTARGET=$${KTARGET:-$(@)} \
@@ -8926,3 +9413,10 @@ lints5:
 #Who remembers TECO?
 love:
 	@echo 'Not war?'
+
+#Check the most recent build (assuming any previous wermit had been deleted)
+check:
+	@if test -s wermit -a -x wermit ; then \
+	echo SUCCESS:; ls -log wermit ; else \
+	echo FAILED; \
+	fi

@@ -1,12 +1,12 @@
 #define CKUTIO_C
 
 #ifdef aegis
-char *ckxv = "Aegis Communications support, 10.0.336, 09 Oct 2022";
+char *ckxv = "Aegis Communications support, 10.0.337, 07 Dec 2022";
 #else
 #ifdef Plan9
-char *ckxv = "Plan 9 Communications support, 10.0.336, 09 Oct 2022";
+char *ckxv = "Plan 9 Communications support, 10.0.337, 07 Dec 2022";
 #else
-char *ckxv = "UNIX Communications support, 10.0.336, 09 Oct 2022";
+char *ckxv = "UNIX Communications support, 10.0.337, 07 Dec 2022";
 #endif /* Plan9 */
 #endif /* aegis */
 
@@ -7843,8 +7843,8 @@ congspd() {
 static long spdlist[NSPDLIST];
 /*
   As written, this picks up the speeds known at compile time, and thus
-  apply to the system where C-Kermit was built, rather than to the one where
-  it is running.  Suggestions for improvement are always welcome.
+  applies to the computer where C-Kermit was built, rather than to the one 
+  where it is running.  Suggestions for improvement are always welcome.
 */
 long *
 ttspdlist() {
@@ -7852,6 +7852,8 @@ ttspdlist() {
     for (i = 0; i < NSPDLIST; i++)	/* Initialize the list */
       spdlist[i] = -1L;
     i = 1;
+
+/* USETCSETSPEED is only for SCO UNIXWARE 7 */
 
 #ifdef USETCSETSPEED			/* No way to find out what's legal */
     debug(F100,"ttspdlist USETCSETSPEED","",0);

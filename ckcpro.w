@@ -1,6 +1,11 @@
 char *protv =                                                     /* -*-C-*- */
-"C-Kermit Protocol Module 10.0.166, 23 Sep 2022";
-
+"C-Kermit Protocol Module 10.0.167, 10 Nov 2022 ";
+/*
+  EFFECTIVE 8 NOVEMBER 2022 THIS FILE IS RETIRED.  Previously it was processed
+  by the 'wart' program to convert the part between %% .. %% from Lex format
+  to the C module called ckcpro.c.  This was an unnecessary complication.
+  From now on, any changes to the protocol must be made directly to ckcpro.c.
+*/
 int kactive = 0;			/* Kermit protocol is active */
 
 #define PKTZEROHACK
