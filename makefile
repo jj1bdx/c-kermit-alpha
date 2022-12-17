@@ -1,8 +1,8 @@
 # makefile / Makefile / ckuker.mak / CKUKER.MAK
 #
-# Wed Dec  7 15:49:37 2022
-BUILDID=20221207
-CKVER= "10.0 Beta.07"
+# Thu Dec 15 13:14:25 2022
+BUILDID=20221215
+CKVER= "10.0 Beta.08"
 #
 # -- Makefile to build C-Kermit for UNIX and UNIX-like platforms --
 #
@@ -6750,7 +6750,11 @@ linuxso:
 # make linux+krb5 "LIBS=$LIBS /lib/libk5crypto.so.3 /lib/libcom_err.so.2"
 # On RHEL5.x: make linux+krb5 -UCK_DES
 # On RHEL6.6: make linux+krb5 "K5LIB=-L /lib64"
-linux+krb5:
+# This one tends to have trouble finding all its pieces.
+# As of C-Kermit 10.0 Beta.08 this target was renamed from linux+krb5
+# to linux+krb5-old and the next target, originally called linux+krb5-new
+# is now linux+krb5, and should work in most cases.
+linux+krb5-old:
 	@echo 'Making C-Kermit $(CKVER) for Linux with Kerberos 5...'
 	@case `openssl version` in \
 	  *0.9.7*) OPENSSLOPTION="-DOPENSSL_097" ;; \
@@ -6811,8 +6815,8 @@ linux+krb5:
 # linker to find them.  It also handles the frequent situation where the
 # gssapi library is install but the linker doesn't know about it.  Thanks to
 # Peter Eichhorn for a great deal of help with the syntax in the gssapi
-# section! - fdc 24 November 2022
-linux+krb5-new:
+# section! - fdc 24 November 2022 (renamed to linux+krb5 15 December 2022)
+linux+krb5 linux+krb5-new:
 	@echo 'NEW Making C-Kermit $(CKVER) for Linux with Kerberos 5...'
 	@case `openssl version` in \
 	  *0.9.7*) OPENSSLOPTION="-DOPENSSL_097" ;; \
@@ -7169,7 +7173,7 @@ linuxegcs:
 	"LNKFLAGS = $(LNKFLAGS)" "LIBS = -lncurses -lcrypt -lresolv"
 
 #Linux on Intel PC with Cygnus or MIT Kerberos 5 1.2.1 (no K4 compatibility).
-linux+krb5-old:
+linux+krb5-older:
 	@echo 'Making C-Kermit $(CKVER) for Linux on Intel with Kerberos...'
 	$(MAKE) xermit KTARGET=$${KTARGET:-$(@)} "CC = gcc" "CC2 = gcc" \
 	"CFLAGS = -O -funsigned-char -pipe -DPOSIX -DLINUX -DNOCOTFMC \

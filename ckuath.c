@@ -1,4 +1,4 @@
-char *ckathv = "Authentication, 10.0.243, 04 Dec 2022";
+char *ckathv = "Authentication, 10.0.244, 13 Dec 2022";
 /*
   C K U A T H . C  --  Authentication for C-Kermit
 
@@ -9,6 +9,8 @@ char *ckathv = "Authentication, 10.0.243, 04 Dec 2022";
 
     Author:  Jeffrey E Altman (jaltman@secure-endpoints.com)
                Secure Endpoints Inc., New York City
+    Latest update: Tue Dec 13 07:10:21 2022 (David Goodwin for CKW)
+
 */
 /*
  * Additional copyrights included with affected code.
@@ -1381,7 +1383,9 @@ ck_tn_auth_request()
 
 #ifdef CK_ENCRYPTION
 _PROTOTYP(int encrypt_is_decrypting,(void));
+#ifndef OS2
 _PROTOTYP(int  encrypt_request_start, (void));
+#endif /* OS2 */
 _PROTOTYP(int encrypt_request_end, (void));
 _PROTOTYP(int get_crypt_table,(struct keytab **, int *));
 /* The four above added fdc 26 September 2022 */

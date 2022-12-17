@@ -2,7 +2,7 @@
 
 /*
   For recent additions search below for "2021" and "2022".
-  Most recent update: Tue Dec  6 06:55:11 2022
+  Most recent update: Tue Dec 13 07:09:09 2022
 
   NOTE TO CONTRIBUTORS: This file, and all the other C-Kermit files, must be
   compatible with C preprocessors that support only #ifdef, #else, #endif,
@@ -78,6 +78,7 @@
 #define NOIKSD
 #endif /* NOIKSD */
 #endif /* NOICP */
+
 #ifdef NOSPL                            /* 30 Oct 2022 */
 #ifndef NOIKSD                          /* 30 Oct 2022 */
 #define NOIKSD
@@ -85,14 +86,20 @@
 #ifndef NOLEARN                         /* 30 Oct 2022 */
 #define NOLEARN
 #endif /* NOLEARN */
+#else                                   /* 12 December 2022 */
+
 #ifndef NOTYPEINTERPRET                 /* 23 August 2022 - TYPE /INTERPRET */
+#ifndef TYPEINTERPRET
 #define TYPEINTERPRET
+#endif  /* TYPEINTERPRET */
 #endif  /* NOTYPEINTERPRET */
+
 #ifndef NOCOPYINTERPRET                 /* 20 Sep 2022 - COPY /INTERPRET */
 #ifndef COPYINTERPRET
 #define COPYINTERPRET
 #endif  /* COPYINTERPRET */
 #endif  /* NOCOPYINTERPRET */
+
 #endif /* NOSPL */
 /*
   Disinclude features that are "deprecated" in 2022;
@@ -683,7 +690,7 @@
 /* Commented out fdc May 2020 to allow external SSH command */
 /* #ifdef NETPTY */
 /* #undef NETPTY */
-/* #endif /* NETPTY */
+/* #endif NETPTY */
 #ifdef RLOGCODE
 #undef RLOGCODE
 #endif /* RLOGCODE */
@@ -1290,7 +1297,9 @@ extern int errno;                       /* fdc 1 November 2022 */
 #endif /* OSKORUNIX */
 
 #ifdef OS2
+#ifndef CK_ANSIC
 #define CK_ANSIC		 /* OS/2 supports ANSIC and more extensions */
+#endif /* CK_ANSIC */
 #endif /* OS2 */
 
 #ifdef OSF50			   /* Newer OSF/1 versions imply older ones */
@@ -5758,7 +5767,9 @@ _PROTOTYP( int ttinl, (CHAR *, int, int, CHAR) );
 #define CK_XYZ
 #ifndef NOXYZDLL
 #define XYZ_INTERNAL			/* Internal and DLL */
+#ifndef XYZ_DLL
 #define XYZ_DLL
+#endif /* XYZ_DLL */
 #endif /* NOXYZDLL */
 #endif /* OS2 */
 #endif /* UNIX */

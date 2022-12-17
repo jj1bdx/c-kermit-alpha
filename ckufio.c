@@ -3316,7 +3316,7 @@ int
 zxcmd(filnum,comand) int filnum; char *comand; {
     int out;
     int pipes[2];
-    extern int kactive;                 /* From ckcpro.w and ckcmai.c */
+    extern int kactive;                 /* From ckcpro.c and ckcmai.c */
 
     if (nopush) {
         debug(F100,"zxcmd fails: nopush","",0);

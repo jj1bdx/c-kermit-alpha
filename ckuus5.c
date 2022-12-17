@@ -16,6 +16,7 @@ int cmdsrc() { return(0); }
       Secure Endpoints Inc., New York City
     Last update: Oct 10-11 2022 (fdc and sms)
     Last update: Dec 02 2022 (David Goodwin - SHOW MOUSE)
+    Last update: Dec 13 2022 (David Goodwin - missing break + CKW arrow keys)
 
   Copyright (C) 1985, 2022,
     Trustees of Columbia University in the City of New York.
@@ -4044,7 +4045,7 @@ herald() {
         printf("%s\n",myherald);
         printf(" Copyright (C) 1985, %s,\n", ck_cryear);
         printf("  Trustees of Columbia University in the City of New York.\n");
-        printf("  Open Source since 2011; License: 3-clause BSD.\n");
+        printf("  Open Source 3-clause BSD license since 2011.\n");
         if (!quiet && !backgrd ) {
             debug(F111,"herald","srvcdmsg",srvcdmsg);
             if (srvcdmsg) {
@@ -5821,6 +5822,7 @@ shomou() {
                          mousename(button,event),
                          mousemap[button][event].key.scancode);
                 }
+                break;
             case kverb:
               id = mousemap[button][event].kverb.id & ~(F_KVERB);
               if (id != K_IGNORE) {
@@ -9426,6 +9428,30 @@ varval(s,v) char *s; CK_OFF_T *v; {
     return(0);
 }
 
+#define SVALN 2048
+/*
+  Like varval() but returns variable value as a string, not a number.
+  Added but not tested or used; it's usually easier to use zzstring().
+  - fdc  11 December 2022
+*/
+int
+varsval(s,s2) char *s; char **s2; {
+    char valbuf[SVALN+1];               /* s is pointer to variable name */
+    char name[256];
+    char *p;
+    int y;
+
+    if (*s != CMDQ) {                   /* Handle macro names too */
+        ckmakmsg(name,256,"\\m(",s,")",NULL);
+        s = name;
+    }
+    p = valbuf;                         /* Expand variable into valbuf. */
+    y = SVALN;
+    if (zzstring(s,&p,&y) < 0) return(-1);
+    *s2 = p;                            /* success */
+    return(0);
+}
+
 /* Increment or decrement a variable */
 /* Returns -1 on failure, 0 on success */
 
@@ -10542,6 +10568,16 @@ initoptlist() {
     makestr(&(optlist[noptlist++]),"__USE_LARGEFILE64");
 #endif	/* __USE_LARGEFILE64 */
 
+#ifdef TMPBUFSIZ
+    sprintf(line,"TMPBUFSIZ=%d",TMPBUFSIZ); /* SAFE */
+    makestr(&(optlist[noptlist++]),line);
+#endif /* TMPBUFSIZ */
+
+#ifdef LINEBUFSIZ
+    sprintf(line,"LINEBUFSIZ=%d",LINEBUFSIZ); /* SAFE */
+    makestr(&(optlist[noptlist++]),line);
+#endif /* LINEBUFSIZ */
+
 #ifdef COMMENT
 #ifdef CHAR_MAX
     sprintf(line,"CHAR_MAX=%llx",CHAR_MAX); /* SAFE */
@@ -10681,6 +10717,16 @@ initoptlist() {
     makestr(&(optlist[noptlist++]),"NOVMSSHARE");
 #endif /* NOVMSSHARE */
 #endif /* VMS */
+
+#ifdef NOARROWKEYS
+    sprintf(line,"NOARROWKEYS");
+    makestr(&(optlist[noptlist++]),line);
+#endif /* NOARROWKEYS */
+
+#ifdef DOARROWKEYS
+    sprintf(line,"DOARROWKEYS");
+    makestr(&(optlist[noptlist++]),line);
+#endif /* DOARROWKEYS */
 
 #ifdef datageneral
     makestr(&(optlist[noptlist++]),"datageneral");
@@ -12007,6 +12053,20 @@ initoptlist() {
 #endif /* CKFLOAT */
 #endif /* NOFLOAT */
 
+#ifdef COPYINTERPRET
+    makestr(&(optlist[noptlist++]),"COPYINTERPRET");
+#endif /* COPYINTERPRET */
+#ifdef TYPEINTERPRET
+    makestr(&(optlist[noptlist++]),"TYPEINTERPRET");
+#endif /* TYPEINTERPRET */
+#ifdef GREPINTERPRET
+    makestr(&(optlist[noptlist++]),"GREPINTERPRET");
+#endif /* GREPINTERPRET */
+
+#ifdef  TMX_TIME_T
+    makestr(&(optlist[noptlist++])," TMX_TIME_T");
+#endif /*  TMX_TIME_T */
+
 #ifdef SSH
     makestr(&(optlist[noptlist++]),"SSH");
 #endif /* SSH */
@@ -12102,7 +12162,19 @@ printf("NOWTMP not defined\n");
 #endif /* NT */
     lines++;
 #endif /* OS2 */
-    printf("\n");
+    {                                /* New 11 December 2022 - fdc */
+        char mebuf[2046];            /* Show Kermit's own pathname and size */
+        char * s;
+        char * mestring = 
+"\\v(startup)\\v(name), size: \\fsize(\\v(startup)\\v(name))";
+        int mysize = 2046;
+        int x = 0;
+        s = mebuf;
+        x = zzstring(mestring,&s,&mysize);
+        printf("%s\n\n",mebuf);
+    }
+/* END:NEW */
+
     if (++lines > cmd_rows - 3) { if (!askmore()) return(1); else lines = 0; }
     printf("Major features included:\n");
     if (++lines > cmd_rows - 3) { if (!askmore()) return(1); else lines = 0; }
@@ -12524,10 +12596,13 @@ printf("NOWTMP not defined\n");
     if (++lines > cmd_rows - 3) { if (!askmore()) return(1); else lines = 0; }
 #endif /* NOHTTP */
 #ifdef NOARROWKEYS
+/* OS/2 and Windows always have arrow key support regardless of the NOARROWKEYS
+ * build option */
+#ifndef OS2
     printf(" No arrow-key support\n");
     if (++lines > cmd_rows - 3) { if (!askmore()) return(1); else lines = 0; }
+#endif /* OS2 */
 #endif /* NOARROWKEYS */
-
 
 #ifdef NODIAL
     printf(" No DIAL command\n");

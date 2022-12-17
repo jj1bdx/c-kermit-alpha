@@ -1,8 +1,8 @@
 /* ckcmai.c - Main program for C-Kermit plus some miscellaneous functions */
 
-#define EDITDATE  "07 Dec 2022"       /* Last edit date dd mmm yyyy */
-#define EDITNDATE "20221207"          /* Keep them in sync */
-/* Wed Dec  7 15:49:37 2022 */
+#define EDITDATE  "15 Dec 2022"       /* Last edit date dd mmm yyyy */
+#define EDITNDATE "20221215"          /* Keep them in sync */
+/* Thu Dec 15 13:14:25 2022 */
 /*
   As of 27 September 2022 BETATEST is defined in ckcdeb.h, not here, 
   because it's also used in other modules.
@@ -58,10 +58,11 @@ char * ck_cryear = "2022"; 		/* C-Kermit copyright year */
    The Windows and non-Windows Betas happen at different times.
 */
 char *ck_s_test = "Beta";
-char *ck_s_tver = "07/Windows-04";
+char *ck_s_tver = "08/Windows-04";
 #else
+/* Can also use "Pre-Beta" here for in between "daily" uploads */
 char *ck_s_test = "Beta";		/* "Dev","Alpha","Beta","RC", or "" */
-char *ck_s_tver = "07";			/* Test version number */
+char *ck_s_tver = "08";			/* Test version number */
 #endif /* OS2 */
 #else /* BETATEST */
 char *ck_s_test = "";			/* Not development */
@@ -101,9 +102,9 @@ static char sccsid[] = "@(#)C-Kermit 10.0";
   Kermit 95, and Mac Kermit, just C-Kermit for each platform.
 */
 char *ck_s_ver = "10.0";                /* C-Kermit version string */
-char *ck_s_edit = "401";                /* Edit number (for Debian package) */
-char *ck_s_xver = "10.0.401";           /* eXtended version string */
-long  ck_l_ver = 1000401L;              /* C-Kermit version number */
+char *ck_s_edit = "402";                /* Edit number (for Debian package) */
+char *ck_s_xver = "10.0.402";           /* eXtended version string */
+long  ck_l_ver = 1000402L;              /* C-Kermit version number */
 char *ck_s_name = "C-Kermit";           /* Name of this program */
 char *ck_s_who = "";                    /* Where customized, "" = not. */
 char *ck_patch = "";                    /* Patch info, if any. */
