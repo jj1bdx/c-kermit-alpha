@@ -3,20 +3,20 @@
 #define CK_NONBLOCK                     /* See zoutdump() */
 
 #ifdef aegis
-char *ckzv = "Aegis File support, 10.0.231, 30 Nov 2022";
+char *ckzv = "Aegis File support, 10.0.234, 05 May 2023";
 #else
 #ifdef Plan9
-char *ckzv = "Plan 9 File support, 10.0.231, 30 Nov 2022";
+char *ckzv = "Plan 9 File support, 10.0.234, 05 May 2023";
 #else
-char *ckzv = "UNIX File support, 9.0.231, 30 Nov 2022";
+char *ckzv = "UNIX File support, 9.0.234, 05 May 2023";
 #endif /* Plan9 */
 #endif /* aegis */
 /*
   Author: Frank da Cruz <fdc@columbia.edu>,
     Columbia University 1974-2011;
-    the Open Source Kermit Project 2011-2022.
+    the Open Source Kermit Project 2011-????
 
-  Copyright (C) 1985, 2022,
+  Copyright (C) 1985, 2023,
     Trustees of Columbia University in the City of New York.
     All rights reserved.  See the C-Kermit COPYING.TXT file or the
     copyright text in the ckcmai.c module for disclaimer and permissions.
@@ -43,17 +43,6 @@ char *ckzv = "UNIX File support, 9.0.231, 30 Nov 2022";
 #ifndef NOCSETS
 #include "ckcxla.h"
 #endif /* NOCSETS */
-
-/* To avoid pulling in all of ckuusr.h so we copy the few needed prototypes */
-
-struct mtab {				/* Macro table, like keyword table */
-    char *kwd;				/* But with pointers for vals */
-    char *mval;				/* instead of ints. */
-    short flgs;
-};
-_PROTOTYP( int mlook, (struct mtab [], char *, int) );
-_PROTOTYP( int dodo, (int, char *, int) );
-_PROTOTYP( int parser, ( int ) );
 
 #ifdef COMMENT
 /* This causes trouble in C-Kermit 8.0.  I don't remember the original */
@@ -139,6 +128,10 @@ _PROTOTYP( int parser, ( int ) );
 
 #ifdef __NetBSD__
 #include <sys/wait.h>
+#else
+#ifdef HAVEWAITH                        /* for FreeBSD, OpenBSD */
+#include <sys/wait.h>
+#endif  /* HAVEWAITH */
 #endif  /* __NetBSD__ */
 
 #ifdef UNIX                             /* Pointer arg to wait() allowed */
@@ -1000,6 +993,10 @@ extern int ckxlogging;
 #include "ckuath.h"                     /* fdc 2021-12-17 */
 #endif /* CK_AUTHENTICATION */
 
+#include "ckuusr.h"
+#include "ckcnet.h"                     /* struct sockaddr */
+#include "ckcfnp.h"                     /* Prototypes (must be last) */
+
 int ckxanon = 1;                        /* Anonymous login ok */
 int ckxperms = 0040;                    /* Anonymous file permissions */
 int ckxpriv = 1;			/* Priv'd login ok */
@@ -1383,7 +1380,12 @@ zkself() {                              /* For "bye", but no guarantee! */
 }
 
 static VOID
-getfullname(name) char * name; {
+#ifdef CK_ANSIC
+getfullname( char * name )
+#else
+getfullname(name) char * name;
+#endif /* CK_ANSIC */
+{
     char *p = (char *)fullname;
     int len = 0;
     fullname[0] = '\0';
@@ -1440,7 +1442,12 @@ doiklog() {
 /* Returns 1 on success, 0 on failure */
 
 int
-zopeni(n,name) int n; char *name; {
+#ifdef CK_ANSIC
+zopeni( int n, char *name )
+#else
+zopeni(n,name) int n; char *name;
+#endif /* CK_ANSIC */
+{
     int x;
 
     debug(F111,"zopeni",name,n);
@@ -1524,9 +1531,12 @@ zopeni(n,name) int n; char *name; {
 
 /*ARGSUSED*/	/* zz not used */
 int
-zopeno(n,name,zz,fcb)
-/* zopeno */  int n; char *name; struct zattr *zz; struct filinfo *fcb; {
-
+#ifdef CK_ANSIC
+zopeno( int n, char *name, struct zattr *zz, struct filinfo *fcb )
+#else
+zopeno(n,name,zz,fcb) int n; char *name; struct zattr *zz; struct filinfo *fcb;
+#endif /* CK_ANSIC */
+{
     char p[8];
     int append = 0;
     int istty = 0, filefd = 0;
@@ -1698,7 +1708,12 @@ zopeno(n,name,zz,fcb)
 /*  Returns 0 if arg out of range, 1 if successful, -1 if close failed.  */
 
 int
-zclose(n) int n; {
+#ifdef CK_ANSIC
+zclose( int n )
+#else
+zclose(n) int n;
+#endif /* CK_ANSIC */
+{
     int x = 0, x2 = 0;
     int dummy;
     extern CK_OFF_T ffc;
@@ -1809,7 +1824,12 @@ zclose(n) int n; {
 /*  Returns -1 if EOF, 0 otherwise with character returned in argument  */
 
 int
-zchin(n,c) int n; int *c; {
+#ifdef CK_ANSIC
+zchin( int n, int *c )
+#else
+zchin(n,c) int n; int *c;
+#endif /* CK_ANSIC */
+{
     int a;
 
 #ifdef IKSD
@@ -1847,7 +1867,12 @@ zchin(n,c) int n; int *c; {
   Returns 0 on success, -1 on EOF or error.
 */
 int
-zsinl(n,s,x) int n, x; char *s; {
+#ifdef CK_ANSIC
+zsinl( int n, char *s, int x )
+#else
+    zsinl(n,s,x) int n, x; char *s;
+#endif /* CK_ANSIC */
+{
     int a, z = 0;                       /* z is return code. */
     int count = 0;
     int len = 0;
@@ -1904,7 +1929,12 @@ zsinl(n,s,x) int n, x; char *s; {
   Returns number of bytes read on success, 0 on EOF or error.
 */
 int
-zxin(n,s,x) int n, x; char *s; {
+#ifdef CK_ANSIC
+zxin( int n, char *s, int x )
+#else
+zxin(n,s,x) int n, x; char *s;
+#endif /* CK_ANSIC */
+{
 #ifdef IKSD
     if (inserver && !local && (n == ZCTERM || n == ZSTDIO)) {
         int a, i;
@@ -2064,7 +2094,12 @@ zinfill() {
 /*  Returns 0 on success, -1 on failure */
 
 int
-zsout(n,s) int n; char *s; {
+#ifdef CK_ANSIC
+zsout( int n, char *s )
+#else
+zsout(n,s) int n; char *s;
+#endif /* CK_ANSIC */
+{
     int rc = 0;
     rc = chkfn(n);
     if (rc < 1) return(-1);             /* Keep this, prevents memory faults */
@@ -2104,7 +2139,12 @@ zsout(n,s) int n; char *s; {
 /*  Returns 0 on success, -1 on failure */
 
 int
-zsoutl(n,s) int n; char *s; {
+#ifdef CK_ANSIC
+zsoutl( int n, char *s )
+#else
+zsoutl(n,s) int n; char *s;
+#endif /* CK_ANSIC */
+{
     if (zsout(n,s) < 0)
         return(-1);
 
@@ -2132,7 +2172,12 @@ zsoutl(n,s) int n; char *s; {
 /*  Returns number of characters written on success, -1 on failure */
 
 int
-zsoutx(n,s,x) int n, x; char *s; {
+#ifdef CK_ANSIC
+zsoutx( int n, char *s, int x )
+#else
+zsoutx(n,s,x) int n, x; char *s;
+#endif /* CK_ANSIC */
+{
     int k;
     if (!s) return(0);
     if (!*s) return(0);
@@ -2261,7 +2306,12 @@ zoutdump() {
    1: n in range and file is open
 */
 int
-chkfn(n) int n; {
+#ifdef CK_ANSIC
+chkfn( int n )
+#else
+chkfn(n) int n;
+#endif /* CK_ANSIC */
+{
     /* if (n != ZDFILE) debug(F101,"chkfn","",n); */
     if (n < 0 || n >= ZNFILS) {
         if (n != ZDFILE) debug(F101,"chkfn out of range","",n);
@@ -2298,7 +2348,12 @@ char linkname[CKMAXPATH+1];
 #endif /* CKSYMLINK */
 
 CK_OFF_T
-zgetfs(name) char *name; {
+#ifdef CK_ANSIC
+zgetfs( char * name )
+#else
+zgetfs(name) char *name;
+#endif /* CK_ANSIC */
+{
     struct stat buf;
     char fnam[CKMAXPATH+4];
     CK_OFF_T size = (CK_OFF_T)-1;
@@ -2443,7 +2498,12 @@ zgetfs(name) char *name; {
   Directory files, special files, and symbolic links are not readable.
 */
 CK_OFF_T
-zchki(name) char *name; {
+#ifdef CK_ANSIC
+zchki( char * name )
+#else
+zchki(name) char *name;
+#endif /* CK_ANSIC */
+{
     struct stat buf;
     char * s;
     int x, itsadir = 0;
@@ -2560,7 +2620,12 @@ zchki(name) char *name; {
    . Can I create a file (or directory) and its parent(s)?
 */
 int
-zchko(name) char *name; {
+#ifdef CK_ANSIC
+zchko( char * name )
+#else
+zchko(name) char *name;
+#endif /* CK_ANSIC */
+{
     int i, x, itsadir = 0;
     char *s = NULL;
     char * oname;
@@ -2760,7 +2825,12 @@ zchko(name) char *name; {
 /* Returns: -1 on error, 0 on success */
 
 int
-zdelet(name) char *name; {
+#ifdef CK_ANSIC
+zdelet( char * name )
+#else
+zdelet(name) char *name;
+#endif /* CK_ANSIC */
+{
     int x;
 #ifdef CK_LOGIN
     if (isguest)
@@ -2794,13 +2864,21 @@ zdelet(name) char *name; {
 /*  Z R T O L  --  Convert remote filename into local form  */
 
 VOID
-zrtol(name,name2) char *name, *name2; {
+#ifdef CK_ANSIC
+zrtol( char *name, char *name2 )
+#else
+zrtol(name,name2) char *name, *name2;
+#endif /* CK_ANSIC */
+{
     nzrtol(name,name2,1,0,CKMAXPATH);
 }
 
 VOID
-nzrtol(name,name2,fncnv,fnrpath,max)
-    char *name, *name2; int fncnv, fnrpath, max;
+#ifdef CK_ANSIC
+nzrtol( char *name, char *name2, int fncnv, int fnrpath, int max )
+#else
+nzrtol(name,name2,fncnv,fnrpath,max) char *name,*name2;int fncnv,fnrpath,max;
+#endif /* CK_ANSIC */
 { /* nzrtol */
     char *s, *p;
     int flag = 0, n = 0;
@@ -2922,7 +3000,12 @@ nzrtol(name,name2,fncnv,fnrpath,max)
 static char work[CKMAXPATH+1];
 
 VOID
-zstrip(name,name2) char *name, **name2; {
+#ifdef CK_ANSIC
+zstrip( char *name, char **name2 )
+#else
+zstrip(name,name2) char *name, **name2;
+#endif /* CK_ANSIC */
+{
     char *cp, *pp;
     int n = 0;
 
@@ -2952,7 +3035,12 @@ zstrip(name,name2) char *name, **name2; {
 /*  Z L T O R  --  Local TO Remote */
 
 VOID
-zltor(name,name2) char *name, *name2; {
+#ifdef CK_ANSIC
+zltor( char *name, char *name2 )
+#else
+zltor(name,name2) char *name, *name2;
+#endif /* CK_ANSIC */
+{
     nzltor(name,name2,1,0,CKMAXPATH);
 }
 
@@ -2962,8 +3050,11 @@ zltor(name,name2) char *name, *name2; {
   fncnv = 0 for no conversion, > 0 for regular conversion, < 0 for minimal.
 */
 VOID
-nzltor(name,name2,fncnv,fnspath,max)
-    char *name, *name2; int fncnv, fnspath, max;
+#ifdef CK_ANSIC
+nzltor( char *name, char *name2, int fncnv, int fnspath, int max )
+#else
+nzltor(name,name2,fncnv,fnspath,max) char *name,*name2;int fncnv,fnspath,max;
+#endif /* CK_ANSIC */
 { /* nzltor */
     char *cp, *pp;
 #ifdef COMMENT
@@ -3097,7 +3188,12 @@ nzltor(name,name2,fncnv,fnspath,max)
     1 on success
 */
 int
-zchdir(dirnam) char *dirnam; {
+#ifdef CK_ANSIC
+zchdir( char * dirnam )
+#else
+zchdir(dirnam) char *dirnam;
+#endif /* CK_ANSIC */
+{
     char *hd, *sp;
 #ifdef IKSDB
     _PROTOTYP (int slotdir,(char *,char *));
@@ -3313,7 +3409,12 @@ _PROTOTYP( char * getcwd, (char *, SIZE_T) );
 
 #ifndef NOPUSH
 int
-zxcmd(filnum,comand) int filnum; char *comand; {
+#ifdef CK_ANSIC
+zxcmd( int filnum, char *comand )
+#else
+zxcmd(filnum,comand) int filnum; char *comand;
+#endif /* CK_ANSIC */
+{
     int out;
     int pipes[2];
     extern int kactive;                 /* From ckcpro.c and ckcmai.c */
@@ -3489,7 +3590,12 @@ zxcmd(filnum,comand) int filnum; char *comand; {
 /*  Used internally by zclose - returns -1 on failure, 1 on success. */
 
 int
-zclosf(filnum) int filnum; {
+#ifdef CK_ANSIC
+zclosf( int filnum )
+#else
+zclosf(filnum) int filnum;
+#endif /* CK_ANSIC */
+{
     int wstat, out;
     int statusp;
 
@@ -3591,7 +3697,12 @@ static int numfnd = 0;			/* Number of matches found */
 #define MINSPACE 1024
 
 static int
-initspace(resarry,len) char * resarry[]; int len; {
+#ifdef CK_ANSIC
+initspace( char * resarry[], int len )
+#else
+initspace(resarry,len) char * resarry[]; int len;
+#endif /* CK_ANSIC */
+{
 #ifdef DYNAMIC
     if (len < MINSPACE) len = MINSPACE;
     if (!sspace) {                      /* Need to allocate string space? */
@@ -3627,7 +3738,12 @@ initspace(resarry,len) char * resarry[]; int len; {
   Returns < 0 on error.
 */
 int
-zsetfil(n, fc) int n, fc; {
+#ifdef CK_ANSIC
+zsetfil( int n, int fc )
+#else
+zsetfil(n, fc) int n, fc;
+#endif /* CK_ANSIC */
+{
 #ifdef DYNAMIC
     switch (fc) {
       case 1:				/* Stringspace */
@@ -3663,7 +3779,12 @@ static
 #endif /* pdp11 */
 #endif /* NONZXPAND */
 int
-zxpand(fnarg) char *fnarg; {
+#ifdef CK_ANSIC
+zxpand(  char *fnarg )
+#else
+zxpand(fnarg) char *fnarg;
+#endif /* CK_ANSIC */
+{
     extern int diractive;
     char fnbuf[CKMAXPATH+8], * fn, * p;
 
@@ -3831,7 +3952,12 @@ zxpand(fnarg) char *fnarg; {
    so that first file (if any) will be returned by the next znext() call.
 */
 int
-nzxpand(s,flags) char * s; int flags; {
+#ifdef CK_ANSIC
+nzxpand( char * s, int flags )
+#else
+nzxpand(s,flags) char * s; int flags;
+#endif /* CK_ANSIC */
+{
     char * p;
     int x;
 
@@ -3901,7 +4027,12 @@ zxrewind() {
   or 0 if no more files in list.
 */
 int
-znext(fn) char *fn; {
+#ifdef CK_ANSIC
+znext( char *fn )
+#else
+znext(fn) char *fn;
+#endif /* CK_ANSIC */
+{
     if (fcount-- > 0) {
         ckstrncpy(fn,*mtchptr++,CKMAXPATH);
     } else {
@@ -4003,7 +4134,12 @@ isbackup(fn) char * fn; {		/* Get backup suffix number */
 static char znewbuf[ZNEWNBL+12];
 
 VOID
-znewn(fn,s) char *fn, **s; {
+#ifdef CK_ANSIC
+znewn( char *fn, char **s )
+#else
+znewn(fn,s) char *fn, **s;
+#endif /* CK_ANSIC */
+{
     char * buf;				/* Pointer to buffer for new name */
     char * xp, * namepart = NULL;       /* Pointer to filename part */
     struct zfnfp * fnfp;                /* znfqfp() result struct pointer */
@@ -4128,7 +4264,12 @@ znewn(fn,s) char *fn, **s; {
    Returns 0 on success, -1 on failure.
 */
 int
-zrename(old,new) char *old, *new; {
+#ifdef CK_ANSIC
+zrename( char *old, char *new )
+#else
+zrename(old,new) char *old, *new;
+#endif /* CK_ANSIC */
+{
     char *p, *s;
     int x;
 
@@ -4250,7 +4391,12 @@ zrename(old,new) char *old, *new; {
   -1 = other error.
 */
 int
-zcopy(source,destination) char *source, *destination; {
+#ifdef CK_ANSIC
+zcopy( char *source, char *destination )
+#else
+zcopy(source,destination) char *source, *destination;
+#endif /* CK_ANSIC */
+{
     char *src, *dst;			/* Local pointers to filenames */
     int x, y, rc;                       /* Workers */
     int in = -1, out = -1;              /* i/o file descriptors */
@@ -4442,7 +4588,12 @@ static char xlperms[24];
 /*  Z S E T P E R M  --  Set permissions of a file  */
 
 int
-zsetperm(f,code) char * f; int code; {
+#ifdef CK_ANSIC
+zsetperm( char * f, int code )
+#else
+zsetperm(f,code) char * f; int code;
+#endif /* CK_ANSIC */
+{
     int x;
 #ifdef CK_SCO32V4
     mode_t mask;
@@ -4466,7 +4617,12 @@ zsetperm(f,code) char * f; int code; {
 /*  Z G P E R M  --  Get permissions of a file as an octal string  */
 
 char *
-zgperm(f) char *f; {
+#ifdef CK_ANSIC
+zgperm( char *f )
+#else
+zgperm(f) char *f;
+#endif /* CK_ANSIC */
+{
     extern int diractive;
     int x; char *s = (char *)xlperms;
     struct stat buf;
@@ -4507,7 +4663,12 @@ zgperm(f) char *f; {
 static char xsperms[24];
 
 char *
-ziperm(f) char * f; {
+#ifdef CK_ANSIC
+ziperm( char * f )
+#else
+ziperm(f) char * f;
+#endif /* CK_ANSIC */
+{
     extern int diractive;
     int x; char *s = (char *)xsperms;
     struct stat buf;
@@ -4671,7 +4832,12 @@ ziperms(f) char *f; {
 #endif /* CK_PERMS */
 
 int
-zsattr(xx) struct zattr *xx; {
+#ifdef CK_ANSIC
+zsattr( struct zattr *xx )
+#else
+zsattr(xx) struct zattr *xx;
+#endif /* CK_ANSIC */
+{
     CK_OFF_T k; int x;
     struct stat buf;
 
@@ -4758,7 +4924,6 @@ zdtstr(timearg) time_t timearg;
     return("");
 #else
     struct tm * time_stamp;
-    struct tm * localtime();
     int yy, ss;
 
     debug(F101,"zdtstr timearg","",timearg);
@@ -4817,7 +4982,12 @@ zdtstr(timearg) time_t timearg;
 }
 
 char *
-zfcdat(name) char *name; {
+#ifdef CK_ANSIC
+zfcdat( char *name )
+#else
+zfcdat(name) char *name;
+#endif /* CK_ANSIC */
+{
 #ifdef TIMESTAMP
     struct stat buffer;
     extern int diractive;
@@ -4894,7 +5064,12 @@ zfcdat(name) char *name; {
   convert local time to UTC.
 */
 time_t
-zstrdt(date,len) char * date; int len; {
+#ifdef CK_ANSIC
+zstrdt( char * date, int len )
+#else
+zstrdt(date,len) char * date; int len;
+#endif /* CK_ANSIC */
+{
 #ifdef M_UNIX
 /*
   SCO UNIX 3.2v2.0 and ODT 2.0 lack prototypes for ftime().
@@ -4912,7 +5087,6 @@ zstrdt(date,len) char * date; int len; {
     extern int ftime();
 #endif /* M_XENIX */
 #endif /* M_UNIX */
-    extern struct tm * localtime();
 
     /* And this should have been declared always through a header file */
 #ifdef HPUX10
@@ -5178,7 +5352,12 @@ zstrdt(date,len) char * date; int len; {
 static char zltimbuf[64];
 
 char *
-zlocaltime(gmtstring) char * gmtstring; {
+#ifdef CK_ANSIC
+zlocaltime( char * gmtstring )
+#else
+zlocaltime(gmtstring) char * gmtstring;
+#endif /* CK_ANSIC */
+{
 #ifdef M_UNIX
 /*
   SCO UNIX 3.2v2.0 and ODT 2.0 lack prototypes for ftime().
@@ -5196,7 +5375,6 @@ zlocaltime(gmtstring) char * gmtstring; {
     extern int ftime();
 #endif /* M_XENIX */
 #endif /* M_UNIX */
-    extern struct tm * localtime();
 
     /* And this should have been declared always through a header file */
 #ifdef HPUX10
@@ -5403,8 +5581,11 @@ zlocaltime(gmtstring) char * gmtstring; {
   1 if x is 1 and date from attribute structure > file creation date.
 */
 int
-zstime(f,yy,x)
-    char *f; struct zattr *yy; int x;
+#ifdef CK_ANSIC
+zstime( char *f, struct zattr *yy, int x )
+#else
+zstime(f,yy,x) char *f; struct zattr *yy; int x;
+#endif /* CK_ANSIC */
 /* zstime */ {
     int r = -1;                         /* Return code */
 #ifdef CK_PERMS
@@ -5417,8 +5598,6 @@ zstime(f,yy,x)
 #ifdef TIMESTAMP
 #ifdef BSD44
     extern int utimes();
-#else
-    extern int utime();
 #endif /* BSD44 */
 
     struct stat sb;
@@ -5784,7 +5963,12 @@ zmail(p,f) char *p; char *f; {          /* Send file f as mail to address p */
 
 #ifndef NOFRILLS
 int
-zprint(p,f) char *p; char *f; {         /* Print file f with options p */
+#ifdef CK_ANSIC
+zprint( char *p, char *f )           /* Print file f with options p */
+#else
+zprint(p,f) char *p; char *f;
+#endif /* CK_ANSIC */
+{
     extern char * printername;          /* From ckuus3.c */
     extern int printpipe;
     int n;
@@ -5855,7 +6039,12 @@ static char *lscmd = "echo";            /* Command to use. */
 
 #ifndef NOPUSH
 int
-shxpand(pat,namlst,len) char *pat, *namlst[]; int len; {
+#ifdef CK_ANSIC
+shxpand( char *pat, char *namlst[], int len )
+#else
+shxpand(pat,namlst,len) char *pat, *namlst[]; int len;
+#endif /* CK_ANSIC */
+{
     char *fgbuf = NULL;                 /* Buffer for forming ls command */
     char *p, *q;                        /* Workers */
 
@@ -5940,7 +6129,12 @@ static char bslash;
     A linked list of the slash-separated segments of the input.
 */
 static struct path *
-splitpath(p) char *p; {
+#ifdef CK_ANSIC
+splitpath( char *p )
+#else
+splitpath(p) char *p;
+#endif /* CK_ANSIC */
+{
     struct path *head,*cur,*prv;
     int i;
 
@@ -6037,7 +6231,12 @@ splitpath(p) char *p; {
   Originally by: Jeff Damens, CUCCA, 1984.  Many changes since then.
 */
 static int
-fgen(pat,resarry,len) char *pat,*resarry[]; int len; {
+#ifdef CK_ANSIC
+fgen( char *pat, char *resarry[], int len )
+#else
+fgen(pat,resarry,len) char *pat,*resarry[]; int len;
+#endif /* CK_ANSIC */
+{
     struct path *head;
     char *sptr, *s;
     int n;
@@ -6195,21 +6394,24 @@ fgen(pat,resarry,len) char *pat,*resarry[]; int len; {
   here, on platforms where they are available.
 */
 static VOID
-traverse(pl,sofar,endcur) struct path *pl; char *sofar, *endcur; {
-
+#ifdef CK_ANSIC
+traverse( struct path *pl, char *sofar, char *endcur )
+#else
+traverse(pl,sofar,endcur) struct path *pl; char *sofar, *endcur;
+#endif /* CK_ANSIC */
+{
 /* Appropriate declarations for directory routines and structures */
 /* #define OPENDIR means to use opendir(), readdir(), closedir()  */
 /* If OPENDIR not defined, we use open(), read(), close() */
 
 #ifdef DIRENT                           /* New way, <dirent.h> */
 #define OPENDIR
-    DIR *fd, *opendir();
+    DIR *fd;
     struct dirent *dirbuf;
-    struct dirent *readdir();
 #else /* !DIRENT */
 #ifdef LONGFN                           /* Old way, <dir.h> with opendir() */
 #define OPENDIR
-    DIR *fd, *opendir();
+    DIR *fd;
     struct direct *dirbuf;
 #else /* !LONGFN */
     int fd;                             /* Old way, <dir.h> with open() */
@@ -6656,7 +6858,12 @@ traverse(pl,sofar,endcur) struct path *pl; char *sofar, *endcur; {
  * Returns: nothing.
  */
 static VOID
-addresult(str,itsadir) char *str; int itsadir; {
+#ifdef CK_ANSIC
+addresult( char *str, int itsadir )
+#else
+addresult(str,itsadir) char *str; int itsadir;
+#endif /* CK_ANSIC */
+{
     int len;
 
     if (!freeptr) {
@@ -6857,7 +7064,12 @@ whoami() {
 /*  T I L D E _ E X P A N D  --  expand ~user to the user's home directory. */
 
 char *
-tilde_expand(dirname) char *dirname; {
+#ifdef CK_ANSIC
+tilde_expand( char *dirname )
+#else
+tilde_expand(dirname) char *dirname;
+#endif /* CK_ANSIC */
+{
 #ifdef DTILDE
 #ifdef pdp11
 #define BUFLEN 100
@@ -6935,7 +7147,12 @@ tilde_expand(dirname) char *dirname; {
   zshcmd() executes the command using the user's preferred shell.
 */
 int
-zsyscmd(s) char *s; {
+#ifdef CK_ANSIC
+zsyscmd( char *s )
+#else
+zsyscmd(s) char *s;
+#endif /* CK_ANSIC */
+{
 #ifdef aegis
     if (nopush) return(-1);
     if (!priv_chk()) return(system(s));
@@ -6991,7 +7208,12 @@ zsyscmd(s) char *s; {
 #endif /* NOZEXEC */
 
 VOID
-z_exec(p,s,t) char * p, ** s; int t; {  /* Overlay ourselves with "p s..." */
+#ifdef CK_ANSIC
+z_exec( char * p, char ** s, int t )
+#else
+z_exec(p,s,t) char * p, ** s; int t;
+#endif /* CK_ANSIC */
+{
 #ifdef NOZEXEC
     printf("EXEC /REDIRECT NOT IMPLEMENTED IN THIS VERSION OF C-KERMIT\n");
     debug(F110,"z_exec NOT IMPLEMENTED",p,0);
@@ -7031,7 +7253,12 @@ z_exec(p,s,t) char * p, ** s; int t; {  /* Overlay ourselves with "p s..." */
   with pexitstatus containing the command's exit status.
 */
 int
-zshcmd(s) char *s; {
+#ifdef CK_ANSIC
+zshcmd( char *s )
+#else
+zshcmd(s) char *s;
+#endif /* CK_ANSIC */
+{
     PID_T pid;
 
 #ifdef NOPUSH
@@ -7155,7 +7382,12 @@ zshcmd(s) char *s; {
   Note: must match the algorithm used by match(), hence no [a-z], etc.
 */
 int
-iswild(filespec) char *filespec; {
+#ifdef CK_ANSIC
+iswild( char *filespec )
+#else
+iswild(filespec) char *filespec;
+#endif /* CK_ANSIC */
+{
     char c, *p, *f; int x;
     int quo = 0;
     if (!filespec)			/* Safety */
@@ -7227,7 +7459,12 @@ clrdircache() {
 #endif /* ISDIRCACHE */
 
 int
-isalink(s) char *s; {
+#ifdef CK_ANSIC
+isalink( char *s )
+#else
+isalink(s) char *s;
+#endif /* CK_ANSIC */
+{
 #ifndef CKSYMLINK
     return(0);
 #else
@@ -7241,7 +7478,12 @@ isalink(s) char *s; {
 }
 
 int
-isdir(s) char *s; {
+#ifdef CK_ANSIC
+isdir( char *s )
+#else
+isdir(s) char *s;
+#endif /* CK_ANSIC */
+{
     int x, needrlink = 0, islink = 0;
     struct stat statbuf;
     char fnam[CKMAXPATH+4];
@@ -7350,7 +7592,12 @@ isdir(s) char *s; {
    -1 on failure to create the directory
 */
 int
-zmkdir(path) char *path; {
+#ifdef CK_ANSIC
+zmkdir( char *path )
+#else
+zmkdir(path) char *path;
+#endif /* CK_ANSIC */
+{
     char *xp, *tp, c;
     int x, count = 0;
 
@@ -7442,7 +7689,12 @@ zmkdir(path) char *path; {
 #endif /* CK_MKDIR */
 
 int
-zrmdir(path) char *path; {
+#ifdef CK_ANSIC
+zrmdir( char *path )
+#else
+zrmdir(path) char *path;
+#endif /* CK_ANSIC */
+{
 #ifdef CK_LOGIN
     if (isguest)
       return(-1);
@@ -7502,7 +7754,12 @@ zfseek(pos) CK_OFF_T pos;
 static struct zfnfp fnfp = { 0, NULL, NULL };
 
 struct zfnfp *
-zfnqfp(fname, buflen, buf)  char * fname; int buflen; char * buf; {
+#ifdef CK_ANSIC 
+zfnqfp( char * fname, int buflen, char * buf )
+#else
+zfnqfp(fname, buflen, buf)  char * fname; int buflen; char * buf;
+#endif /* CK_ANSIC */
+{
     char * s;
     int len;
 #ifdef MAXPATHLEN
@@ -7704,7 +7961,12 @@ zfnqfp(fname, buflen, buf)  char * fname; int buflen; char * buf; {
 /*  Returns 1 if the two names refer to the same existing file, 0 otherwise. */
 
 int
-zcmpfn(s1,s2) char * s1, * s2; {
+#ifdef CK_ANSIC
+zcmpfn( char * s1, char * s2 )
+#else
+zcmpfn(s1,s2) char * s1, * s2;
+#endif /* CK_ANSIC */
+{
     char buf1[CKMAXPATH+1];
     char buf2[CKMAXPATH+1];
 
@@ -7779,7 +8041,12 @@ zcmpfn(s1,s2) char * s1, * s2; {
 /* User-mode chroot() implementation */
 
 int
-zsetroot(s) char * s; {			/* Sets the root */
+#ifdef CK_ANSIC
+zsetroot( char * s )			/* Sets the root */
+#else
+zsetroot(s) char * s;
+#endif /* CK_ANSIC */
+{
     char buf[CKMAXPATH+1];
     if (!s) return(-1);
     if (!*s) return(-1);
@@ -7810,14 +8077,24 @@ zsetroot(s) char * s; {			/* Sets the root */
 }
 
 char *
-zgetroot() {				/* Returns the root */
+#ifdef CK_ANSIC
+zgetroot( void )                        /* Returns the root */
+#else
+zgetroot()
+#endif /* CK_ANSIC */
+{
     if (!ckrootset)
       return(NULL);
     return((char *)ckroot);
 }
 
 int
-zinroot(s) char * s; {			/* Checks if file s is in the root */
+#ifdef CK_ANSIC
+zinroot( char * s )			/* Checks if file s is in the root */
+#else
+zinroot(s) char * s;
+#endif /* CK_ANSIC */
+{
     int x, n;
     struct zfnfp * f = NULL;
     char buf[CKMAXPATH+2];
@@ -7864,7 +8141,12 @@ zinroot(s) char * s; {			/* Checks if file s is in the root */
  * Helper function for sgetpwnam().
  */
 char *
-sgetsave(s) char *s; {
+#ifdef CK_ANSIC
+sgetsave( char *s )
+#else
+sgetsave(s) char *s;
+#endif /* CK_ANSIC */
+{
     char *new = malloc((unsigned) strlen(s) + 1);
     if (new == NULL) {
         printf("?Local resource failure: malloc\n");
@@ -7881,13 +8163,17 @@ sgetsave(s) char *s; {
  * (e.g., globbing).
  */
 struct passwd *
-sgetpwnam(name) char *name; {
+#ifdef CK_ANSIC
+sgetpwnam( char *name )
+#else
+sgetpwnam(name) char *name;
+#endif /* CK_ANSIC */
+{
     static struct passwd save;
     register struct passwd *p;
 #ifdef CK_SHADOW
     register struct spwd *sp;
 #endif /* CK_SHADOW */
-    char *sgetsave();
 
 #ifdef HPUX10_TRUSTED
     struct pr_passwd *pr;
@@ -7982,7 +8268,12 @@ struct pam_handle * pamh = NULL;               /* PAM reference handle */
 #endif /* CK_PAM */
 
 int
-zvuser(name) char *name; {
+#ifdef CK_ANSIC
+zvuser( char *name )
+#else
+zvuser(name) char *name;
+#endif /* CK_ANSIC */
+{
     register char *cp = NULL;
     int x;
     char *shell;
@@ -8193,7 +8484,12 @@ _PROTOTYP(VOID endusershell, (void) );
 /* Check if the given user is in the forbidden-user file */
 
 static int
-checkuser(name) char *name; {
+#ifdef CK_ANSIC
+checkuser( char *name )
+#else
+checkuser(name) char *name;
+#endif /* CK_ANSIC */
+{
     extern char * userfile;
     FILE *fd;
     int i;
@@ -8324,7 +8620,18 @@ zsyslog() {
 #endif	/*  __FreeBSD__ */
 
 int
-zvpass(p) char *p; {
+#ifdef CK_ANSIC
+
+#else
+
+#endif /* CK_ANSIC */
+
+#ifdef CK_ANSIC
+zvpass( char *p )
+#else
+zvpass(p) char *p;
+#endif /* CK_ANSIC */
+{
 #ifndef NODCLINITGROUPS
 _PROTOTYP(int initgroups, (const char *, gid_t) );
 #endif	/* NODCLINITGROUPS */

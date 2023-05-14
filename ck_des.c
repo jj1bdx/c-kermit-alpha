@@ -35,6 +35,9 @@
 #include <des/des.h>
 #endif
 
+#include "ckucmd.h"                     /* xx_strp */
+#include "ckcfnp.h"                     /* Prototypes */
+
 /* This is required by ckclib.c and normally defined in ckuus4.c */
 int fp_digits = 0;		      /* Digits of floating point precision */
 

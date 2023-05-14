@@ -1,8 +1,8 @@
-char *cksslv = "SSL/TLS support, 10.0.237, 01 Dec 2022";
+char *cksslv = "SSL/TLS support, 10.0.238 03 May 2023";
 /*
   C K _ S S L . C --  OpenSSL Interface for C-Kermit
 
-  Copyright (C) 1985, 2022,
+  Copyright (C) 1985, 2023,
     Trustees of Columbia University in the City of New York.
     All rights reserved.  See the C-Kermit COPYING.TXT file or the
     copyright text in the ckcmai.c module for disclaimer and permissions.
@@ -129,6 +129,9 @@ ck_ssleay_is_installed()
 #ifdef OS2ONLY
 #include "ckotcp.h"
 #endif /* OS2ONLY */
+
+#include "ckuusr.h"                     /* struct mtab */
+#include "ckcfnp.h"                     /* Prototypes */
 
 #ifdef SSLDLL
 int ssl_finished_messages = 0;
@@ -967,12 +970,14 @@ static DH *
 get_dh512()
 {
     DH *dh=NULL;
+    BIGNUM *p = NULL;
+    BIGNUM *g = NULL;
 
     if ((dh=DH_new()) == NULL)
         return(NULL);
 #if OPENSSL_VERSION_NUMBER >= 0x10100005L    
-    BIGNUM *p=BN_bin2bn(dh512_p,sizeof(dh512_p),NULL);
-    BIGNUM *g=BN_bin2bn(dh512_g,sizeof(dh512_g),NULL);
+    p=BN_bin2bn(dh512_p,sizeof(dh512_p),NULL);
+    g=BN_bin2bn(dh512_g,sizeof(dh512_g),NULL);
     if ((p == NULL) || (g == NULL)) {
 	BN_free(g);
 	BN_free(p);
@@ -997,12 +1002,14 @@ static DH *
 get_dh768()
 {
     DH *dh=NULL;
+    BIGNUM *p = NULL;
+    BIGNUM *g = NULL;
 
     if ((dh=DH_new()) == NULL)
         return(NULL);
 #if OPENSSL_VERSION_NUMBER >= 0x10100005L    
-    BIGNUM *p=BN_bin2bn(dh768_p,sizeof(dh768_p),NULL);
-    BIGNUM *g=BN_bin2bn(dh768_g,sizeof(dh768_g),NULL);
+    p=BN_bin2bn(dh768_p,sizeof(dh768_p),NULL);
+    g=BN_bin2bn(dh768_g,sizeof(dh768_g),NULL);
     if ((p == NULL) || (g == NULL)) {
 	BN_free(g);
 	BN_free(p);
@@ -1027,12 +1034,14 @@ static DH *
 get_dh1024()
 {
     DH *dh=NULL;
+    BIGNUM *p = NULL;
+    BIGNUM *g = NULL;
 
     if ((dh=DH_new()) == NULL)
         return(NULL);
 #if OPENSSL_VERSION_NUMBER >= 0x10100005L    
-    BIGNUM *p=BN_bin2bn(dh1024_p,sizeof(dh1024_p),NULL);
-    BIGNUM *g=BN_bin2bn(dh1024_g,sizeof(dh1024_g),NULL);
+    p=BN_bin2bn(dh1024_p,sizeof(dh1024_p),NULL);
+    g=BN_bin2bn(dh1024_g,sizeof(dh1024_g),NULL);
     if ((p == NULL) || (g == NULL)) {
 	BN_free(g);
 	BN_free(p);
@@ -1057,12 +1066,14 @@ static DH *
 get_dh1536()
 {
     DH *dh=NULL;
+    BIGNUM *p = NULL;
+    BIGNUM *g = NULL;
 
     if ((dh=DH_new()) == NULL)
         return(NULL);
 #if OPENSSL_VERSION_NUMBER >= 0x10100005L    
-    BIGNUM *p=BN_bin2bn(dh1536_p,sizeof(dh1536_p),NULL);
-    BIGNUM *g=BN_bin2bn(dh1536_g,sizeof(dh1536_g),NULL);
+    p=BN_bin2bn(dh1536_p,sizeof(dh1536_p),NULL);
+    g=BN_bin2bn(dh1536_g,sizeof(dh1536_g),NULL);
     if ((p == NULL) || (g == NULL)) {
 	BN_free(g);
 	BN_free(p);
@@ -1087,12 +1098,14 @@ static DH *
 get_dh2048()
 {
     DH *dh=NULL;
+    BIGNUM *p = NULL;
+    BIGNUM *g = NULL;
 
     if ((dh=DH_new()) == NULL)
         return(NULL);
 #if OPENSSL_VERSION_NUMBER >= 0x10100005L    
-    BIGNUM *p=BN_bin2bn(dh2048_p,sizeof(dh2048_p),NULL);
-    BIGNUM *g=BN_bin2bn(dh2048_g,sizeof(dh2048_g),NULL);
+    p=BN_bin2bn(dh2048_p,sizeof(dh2048_p),NULL);
+    g=BN_bin2bn(dh2048_g,sizeof(dh2048_g),NULL);
     if ((p == NULL) || (g == NULL)) {
 	BN_free(g);
 	BN_free(p);
@@ -2295,6 +2308,8 @@ ssl_tn_init(mode) int mode;
     }
 #endif /* COMMENT */
 
+
+
 #ifdef SSL_KRB5
 #ifndef KRB5_SERVICE_NAME
 #define KRB5_SERVICE_NAME    "host"
@@ -2310,10 +2325,18 @@ ssl_tn_init(mode) int mode;
         if (tls_con->kssl_ctx != NULL)
             kssl_ctx_setstring(tls_con->kssl_ctx, KSSL_KEYTAB, k5_keytab);
     } else {
-        if (ssl_con->kssl_ctx != NULL)
+        if (ssl_con->kssl_ctx != NULL) {
+            if (!SSL_set_tlsext_host_name(ssl_con, hostname)) {
+                debug(F100, "ssl_tn_init: SSL_set_tlsext_host_name failed", "", 0);
+            }
             kssl_ctx_setstring(ssl_con->kssl_ctx, KSSL_SERVER, szHostName);
-        if (tls_con->kssl_ctx != NULL)
+        }
+        if (tls_con->kssl_ctx != NULL) {
+            if (!SSL_set_tlsext_host_name(tls_con, hostname)) {
+                debug(F100, "ssl_tn_init: SSL_set_tlsext_host_name failed", "", 0);
+            }
             kssl_ctx_setstring(tls_con->kssl_ctx, KSSL_SERVER, szHostName);
+        }
     }
     kssl_ctx_setstring(ssl_con->kssl_ctx, KSSL_SERVICE,
                         krb5_d_srv ? krb5_d_srv : KRB5_SERVICE_NAME);
@@ -2620,6 +2643,10 @@ ssl_http_init(hostname) char * hostname;
         }
     }
 #endif /* COMMENT */
+
+    if (!SSL_set_tlsext_host_name(tls_http_con, hostname)) {
+        debug(F100, "ssl_http_init: SSL_set_tlsext_host_name failed", "", 0);
+    }
 
 #ifdef SSL_KRB5
 #ifndef KRB5_SERVICE_NAME

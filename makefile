@@ -1,12 +1,12 @@
 # makefile / Makefile / ckuker.mak / CKUKER.MAK
 #
-# Thu Dec 15 13:14:25 2022
-BUILDID=20221215
-CKVER= "10.0 Beta.08"
+# Tue May  9 14:03:56 2023
+BUILDID=20230506
+CKVER= "10.0 Beta.09"
 #
 # -- Makefile to build C-Kermit for UNIX and UNIX-like platforms --
 #
-# Copyright (C) 1985, 2022,
+# Copyright (C) 1985, 2023,
 #   Trustees of Columbia University in the City of New York.
 #   All rights reserved.  See the C-Kermit COPYING.TXT file or the
 #   copyright text in the ckcmai.c module for disclaimer and permissions.
@@ -1299,7 +1299,7 @@ wermit:	ckcmai.$(EXT) ckclib.$(EXT) ckucmd.$(EXT) ckuusr.$(EXT) ckuus2.$(EXT) \
 		ckcfns.$(EXT) ckcfn2.$(EXT) ckcfn3.$(EXT) ckuxla.$(EXT) \
 		ckucon.$(EXT) ckutio.$(EXT) ckufio.$(EXT) ckudia.$(EXT) \
 		ckuscr.$(EXT) ckcnet.$(EXT) ckctel.$(EXT) ckusig.$(EXT) \
-		ckcuni.$(EXT) ckupty.$(EXT) ckcftp.$(EXT)
+		ckcuni.$(EXT) ckupty.$(EXT) ckcftp.$(EXT) \
 	$(CC2) $(LNKFLAGS) -o wermit \
 		ckcmai.$(EXT) ckclib.$(EXT) ckutio.$(EXT) ckufio.$(EXT) \
 		ckcfns.$(EXT) ckcfn2.$(EXT) ckcfn3.$(EXT) ckuxla.$(EXT) \
@@ -1378,7 +1378,7 @@ krbmit-debug:	ckcmai.$(EXT) ckclib.$(EXT) ckucmd.$(EXT) ckuusr.$(EXT) \
 		ckuxla.$(EXT) ckucns.$(EXT) ckutio.$(EXT) ckufio.$(EXT) \
 		ckudia.$(EXT) ckuscr.$(EXT) ckcnet.$(EXT) ckctel.$(EXT) \
 		ckusig.$(EXT) ckuath.$(EXT) ck_crp.$(EXT) ckcuni.$(EXT) \
-		ckupty.$(EXT) ck_ssl.$(EXT) ckcmdb.$(EXT) ckcftp.$(EXT)
+		ckupty.$(EXT) ck_ssl.$(EXT) ckcmdb.$(EXT) ckcftp.$(EXT) 
 	$(CC2) $(LNKFLAGS) -o krbmit ckcmdb.$(EXT) ckcmai.$(EXT) \
 		ckclib.$(EXT) ckutio.$(EXT) ckufio.$(EXT) ckcfns.$(EXT) \
 		ckcfn2.$(EXT) ckcfn3.$(EXT) ckuxla.$(EXT) ckcpro.$(EXT) \
@@ -1458,95 +1458,97 @@ ckuker.nr:
 # Dependencies for each module...
 #
 ckcmai.$(EXT): ckcmai.c ckcker.h ckcdeb.h ckcsym.h ckcasc.h ckcnet.h ckcsig.h \
-		ckuusr.h ckctel.h ckclib.h
+		ckuusr.h ckctel.h ckclib.h ckcfnp.h
 
-ckclib.$(EXT): ckclib.c ckclib.h ckcdeb.h ckcasc.h ckcsym.h
+ckclib.$(EXT): ckclib.c ckclib.h ckcdeb.h ckcasc.h ckcsym.h ckcfnp.h
 
 ckcfns.$(EXT): ckcfns.c ckcker.h ckcdeb.h ckcsym.h ckcasc.h ckcxla.h ckcuni.h \
-		ckuxla.h ckclib.h ckcnet.h
+		ckuxla.h ckclib.h ckcnet.h ckcfnp.h
 
 ckcfn2.$(EXT): ckcfn2.c ckcker.h ckcdeb.h ckcsym.h ckcasc.h ckcxla.h \
-		ckuxla.h ckctel.h ckclib.h ckcnet.h ckcuni.h
+		ckuxla.h ckctel.h ckclib.h ckcnet.h ckcuni.h ckcfnp.h
 
 ckcfn3.$(EXT): ckcfn3.c ckcker.h ckcdeb.h ckcsym.h ckcasc.h ckcxla.h \
-		ckuxla.h ckclib.h ckcuni.h
+		ckuxla.h ckclib.h ckcuni.h ckcfnp.h
 
 ckuxla.$(EXT): ckuxla.c ckcker.h ckcsym.h ckcdeb.h ckcxla.h ckuxla.h ckclib.h \
-		 ckcuni.h
+		 ckcuni.h ckcfnp.h
 
-ckcuni.$(EXT): ckcuni.c ckcdeb.h ckcker.h ckucmd.h ckcuni.h ckcxla.h ckuxla.h
+ckcuni.$(EXT): ckcuni.c ckcdeb.h ckcker.h ckucmd.h ckcuni.h ckcxla.h ckuxla.h \
+		  ckcfnp.h
 
 ckuusr.$(EXT): ckuusr.c ckucmd.h ckcker.h ckuusr.h ckcsym.h ckcdeb.h ckcxla.h \
-		ckuxla.h ckcasc.h ckcnet.h ckctel.h ckclib.h ckcuni.h
+		ckuxla.h ckcasc.h ckcnet.h ckctel.h ckclib.h ckcuni.h ckcfnp.h
 
 ckuus2.$(EXT): ckuus2.c ckucmd.h ckcker.h ckuusr.h ckcdeb.h ckcxla.h ckuxla.h \
-		ckcasc.h ckcnet.h ckcsym.h ckctel.h ckclib.h ckcuni.h
+		ckcasc.h ckcnet.h ckcsym.h ckctel.h ckclib.h ckcuni.h ckcfnp.h
 
 ckuus3.$(EXT): ckuus3.c ckucmd.h ckcker.h ckuusr.h ckcdeb.h ckcxla.h ckuxla.h \
-		ckcasc.h ckcnet.h ckcsym.h ckctel.h ckclib.h ckcuni.h
+		ckcasc.h ckcnet.h ckcsym.h ckctel.h ckclib.h ckcuni.h ckcfnp.h
 
 ckuus4.$(EXT): ckuus4.c ckucmd.h ckcker.h ckuusr.h ckcdeb.h ckcxla.h ckuxla.h \
-		ckcasc.h ckcnet.h ckuver.h ckcsym.h ckctel.h ckclib.h ckcuni.h
+		ckcasc.h ckcnet.h ckuver.h ckcsym.h ckctel.h ckclib.h \
+		ckcuni.h ckcfnp.h
 
 ckuus5.$(EXT): ckuus5.c ckucmd.h ckcker.h ckuusr.h ckcdeb.h ckcasc.h ckcnet.h \
-		 ckcsym.h ckctel.h ckclib.h ckcxla.h ckuxla.h ckcuni.h
+		 ckcsym.h ckctel.h ckclib.h ckcxla.h ckuxla.h ckcuni.h ckcfnp.h
 
 ckuus6.$(EXT): ckuus6.c ckucmd.h ckcker.h ckuusr.h ckcdeb.h ckcasc.h ckcnet.h \
-		 ckcsym.h ckctel.h ckclib.h
+		 ckcsym.h ckctel.h ckclib.h ckcfnp.h
 
 ckuus7.$(EXT): ckuus7.c ckucmd.h ckcker.h ckuusr.h ckcdeb.h ckcxla.h ckuxla.h \
-		ckcasc.h ckcnet.h ckcsym.h ckctel.h ckclib.h ckcuni.h
+		ckcasc.h ckcnet.h ckcsym.h ckctel.h ckclib.h ckcuni.h ckcfnp.h
 
 ckuusx.$(EXT): ckuusx.c ckcker.h ckuusr.h ckcdeb.h ckcasc.h ckcsym.h \
-		ckcsig.h ckcnet.h ckctel.h ckclib.h ckcxla.h ckuxla.h ckcuni.h
+		ckcsig.h ckcnet.h ckctel.h ckclib.h ckcxla.h ckuxla.h \
+		ckcuni.h ckcfnp.h
 
 ckuusy.$(EXT): ckuusy.c ckcker.h ckcdeb.h ckcasc.h ckcnet.h ckcsym.h ckctel.h \
-		 ckclib.h
+		 ckclib.h ckcfnp.h
 
-ckucmd.$(EXT): ckucmd.c ckcasc.h ckucmd.h ckcdeb.h ckcsym.h ckctel.h ckclib.h
+ckucmd.$(EXT): ckucmd.c ckcasc.h ckucmd.h ckcdeb.h ckcsym.h ckctel.h ckclib.h \
+		ckcfnp.h
 
 ckufio.$(EXT): ckufio.c ckcdeb.h ckuver.h ckcsym.h ckclib.h \
-		ckcxla.h ckuxla.h ckcuni.h
+		ckcxla.h ckuxla.h ckcuni.h ckcfnp.h
 
-ckutio.$(EXT): ckutio.c ckcdeb.h ckcnet.h ckuver.h ckcsym.h ckctel.h ckclib.h
+ckutio.$(EXT): ckutio.c ckcdeb.h ckcnet.h ckuver.h ckcsym.h ckctel.h ckclib.h \
+		ckcfnp.h
 
 ckucon.$(EXT): ckucon.c ckcker.h ckcdeb.h ckcasc.h ckcnet.h ckcsym.h ckctel.h \
-		 ckclib.h
+		 ckclib.h ckcfnp.h
 
 ckucns.$(EXT): ckucns.c ckcker.h ckcdeb.h ckcasc.h ckcnet.h ckcsym.h ckctel.h \
-		 ckclib.h ckcxla.h ckuxla.h ckcuni.h
+		 ckclib.h ckcxla.h ckuxla.h ckcuni.h ckcfnp.h
 
 ckcnet.$(EXT): ckcnet.c ckcdeb.h ckcker.h ckcnet.h ckcsym.h ckcsig.h ckctel.h \
-		 ckclib.h
+		 ckclib.h ckcfnp.h
 
-ckctel.$(EXT): ckcsym.h ckcdeb.h ckcker.h ckcnet.h ckctel.h ckclib.h
+ckctel.$(EXT): ckcsym.h ckcdeb.h ckcker.h ckcnet.h ckctel.h ckclib.h ckcfnp.h
 
-# ck_off_t: ck_off_t.$(EXT)
-#	$(CC) -o ck_off_t ck_off_t.$(EXT)
-
-ckcmdb.$(EXT): ckcmdb.c ckcdeb.h ckcsym.h ckclib.h
+ckcmdb.$(EXT): ckcmdb.c ckcdeb.h ckcsym.h ckclib.h ckcfnp.h
 
 ckudia.$(EXT): ckudia.c ckcker.h ckcdeb.h ckucmd.h ckcasc.h ckcsym.h ckcsig.h \
-		ckcnet.h ckctel.h ckclib.h
+		ckcnet.h ckctel.h ckclib.h ckcfnp.h
 
 ckuscr.$(EXT): ckuscr.c ckcker.h ckcdeb.h ckcasc.h ckcsym.h ckcsig.h \
-		ckcnet.h ckctel.h ckclib.h
+		ckcnet.h ckctel.h ckclib.h ckcfnp.h
 
 ckusig.$(EXT): ckusig.c ckcasc.h ckcdeb.h ckcker.h ckcnet.h ckuusr.h \
-		ckcsig.h ckctel.h ckclib.h
+		ckcsig.h ckctel.h ckclib.h ckcfnp.h
 
 ckcftp.$(EXT): ckcftp.c ckcdeb.h ckcasc.h ckcker.h ckucmd.h ckuusr.h \
-		ckcnet.h ckctel.h ckcxla.h ckuxla.h ckcuni.h
+		ckcnet.h ckctel.h ckcxla.h ckuxla.h ckcuni.h ckcfnp.h
 
-ckupty.$(EXT): ckupty.c ckupty.h ckcdeb.h
+ckupty.$(EXT): ckupty.c ckupty.h ckcdeb.h ckcfnp.h
 
 ckuath.$(EXT): ckuath.c ckcdeb.h ckucmd.h ckuath.h ckuat2.h ckctel.h \
-		 ckclib.h ckcnet.h
+		 ckclib.h ckcnet.h ckcfnp.h
 
-ck_crp.$(EXT): ck_crp.c ckcdeb.h ckcnet.h ckuath.h ckclib.h
+ck_crp.$(EXT): ck_crp.c ckcdeb.h ckcnet.h ckuath.h ckclib.h ckcfnp.h
 
 ck_ssl.$(EXT): ck_ssl.c ckcdeb.h ckucmd.h ckuath.h ckuat2.h ckctel.h \
-		 ckclib.h ck_ssl.h
+		 ckclib.h ck_ssl.h ckcfnp.h
 
 ###########################################################################
 #
@@ -1778,6 +1780,14 @@ freebsd40:
 #and it has not been tested on 4 or 5.
 #OK 2011/06/xx FreeBSD 3.3, 4,4, 4.7, and 8.2
 #OK 2011/08/21 FreeBSD 3.3, 4.4, 6.4, 9.0
+#Added clause for <sys/wait.h> to squelch implicit-declaration warnings
+#Most recently tested on FreeBSD 13.1 (29 April 2023)
+#There is still "sys/timeb.h is deprecated" warning...  This could be
+#squelched with a complicated test to see if <sys/timeb.h> exists and
+#if not then define NOSYSTIMEBH, but if so then grep it for the word
+#"deprecated" and if found define NOSYSTIMEBH, otherwise don't define it,
+#and then finally if NOSYSTIMEBH is defined, to include $$_NOSYSTIMEBH
+#on the make command line.
 freebsd freebsd41 freebsd72 freebsd5 freebsd6 freebsd7 freebsd8 freebsd9:
 	@echo 'Making C-Kermit $(CKVER) for FreeBSD 4.1 or later...'
 	@if test `uname -r | cut -d . -f 1` -ge 8; then \
@@ -1789,10 +1799,13 @@ freebsd freebsd41 freebsd72 freebsd5 freebsd6 freebsd7 freebsd8 freebsd9:
 	if test -f /usr/include/utmpx.h ; \
 	then HAVE_UTMPX='-DHAVEUTMPX' ; \
 	else HAVE_UTMPX='' ; fi; \
+	if test -f /usr/include/sys/wait.h ; \
+	then HAVE_WAITH='-DHAVEWAITH' ; \
+	else HAVE_WAITH='' ; fi; \
 	$(MAKE) CC=$(CC) CC2=$(CC2) xermit KTARGET=$${KTARGET:-$(@)} \
 	"CFLAGS= -DBSD44 -DCK_NCURSES -DCK_NEWTERM -DTCPSOCKET -DNOCOTFMC \
 	-DFREEBSD4 $$HAVE_FBSD8 $$HAVE_FBSD9 -DUSE_UU_LOCK -DFNFLOAT \
-	$$HAVE_UTMPX -DHERALD=\"\\\" `uname -rs`\\\"\" \
+	$$HAVE_UTMPX $$HAVE_WAITH -DHERALD=\"\\\" `uname -rs`\\\"\" \
 	-funsigned-char -DTPUTSARGTYPE=int -DUSE_STRERROR $(KFLAGS) \
 	-O2 -pipe"\
 	"LIBS= -lncurses -lcrypt -lutil -lm $(LIBS)"
@@ -1845,6 +1858,7 @@ freebsd+ssl freebsd+openssl freebsd50+openssl:
 #OK: 2020/08/24 NetBSD 9.0
 #OK: 2022/10/02 NetBSD 9.3
 # `uname -r | grep "[6789].[0-9]" > /dev/null && echo '-DTIMEH'`
+# Note: netbsd15 and 15 are for 1.5 and 1.6 (not 15 and 16).
 netbsd netbsd2 netbsd15 netbsd16 old-netbsd:
 	@echo Making C-Kermit $(CKVER) for NetBSD `uname -r` with curses...
 	$(MAKE) CC=$(CC) CC2=$(CC2) xermit KTARGET=$${KTARGET:-$(@)} \
@@ -2190,14 +2204,24 @@ openbsdold:
 # -DUSE_UU_LOCK and -lutil added for uu_lock()
 # -DNDSYSERRLIST changed to -DUSE_STRERROR
 #If this gives you trouble use the previous entry.
-#NOTE: The openbsd and openbsd+ssl should be reworked to be like the
-#corresponding FreeBSD and NetBSD targets.  The mirbsd targets should
+#29 April 2023 for C-Kermit 10.0: New clauses to account the presence
+# or absence of term.h (curses) sys/timeb.h (dates and times).
 openbsd:
 	@echo Making C-Kermit $(CKVER) for OpenBSD 2.3 or later...
+	if test -f /usr/include/sys/timeb.h ; \
+	then NOSYSTIMEBH='' ; \
+	else NOSYSTIMEBH='-DNOSYSTIMEBH' ; fi; \
+	if test -f /usr/include/term.h ; \
+	then HAVETERMH='-DHAVETERMH' ; \
+	else NOSYSTIMEBH='' ; fi; \
+	if test -f /usr/include/sys/wait.h ; \
+	then HAVE_WAITH='-DHAVEWAITH' ; \
+	else HAVE_WAITH='' ; fi; \
 	$(MAKE) CC=$(CC) CC2=$(CC2) xermit KTARGET=$${KTARGET:-$(@)} \
 	"CFLAGS= -DBSD44 -DCK_CURSES -DCK_NEWTERM -DTCPSOCKET -DOPENBSD \
-	-DHERALD=\"\\\" OpenBSD `uname -r`\\\"\" \
-	-DUSE_UU_LOCK -DFNFLOAT -DUSE_STRERROR $(KFLAGS) -O" \
+	$$NOSYSTIMEBH -DHERALD=\"\\\" OpenBSD `uname -r`\\\"\" \
+	-DUSE_UU_LOCK -DFNFLOAT -DUSE_STRERROR $$HAVETERMH $$HAVE_WAITH \
+	$(KFLAGS) -O" \
 	"LIBS= -lcurses -lutil -lm"
 
 #Better to chain to the openbsd target but...
@@ -6908,17 +6932,13 @@ linux+krb5 linux+krb5-new:
 	 fi; \
 	fi; \
 	echo GSSAPILIB=$$GSSAPILIB; \
-	$(MAKE) linux KTARGET=$${KTARGET:-$(@)} "CC = gcc" "CC2 = gcc" \
+	$(MAKE) linux KTARGET=$${KTARGET:-$(@)} "CC = $(CC)" "CC2 = $(CC2)" \
 	"KFLAGS= -DCK_AUTHENTICATION -DCK_ENCRYPTION -DCK_KERBEROS -DKRB5 \
 	$$HAVE_GSSAPI $$HAVE_DES $$OPENSSLOPTION $$CRYPT_H $$COM_ERR_H \
 	$$KRB5_H $(KFLAGS)" \
 	"LNKFLAGS = $(LNKFLAGS)" \
 	"LIBS = $$LIBCRYPT $$LIBCRYPTO $$LIBK5CRYPTO $$LIBDES $$COM_ERR_LIB \
 	$$K5LIB $$GSSAPILIB  $(LIBS)"
-
-# Linux with Kerberos 5 compiled with Clang
-linux+krb5-clang:
-	$(MAKE) "CC=clang" "CC2=clang" linux+krb5
 
 # Linux with Kerberos 5 and Kerberos 4.
 # Use "make linux+krb5 KFLAGS=-DNO_KRB5_INIT_ETS" if necessary.
@@ -6959,7 +6979,7 @@ linux+ssl linux+openssl linux+openssl+zlib+shadow+pam linux+openssl+shadow:
 	      echo "HAVE DES"; \
 	   else echo "NO DES"; \
 	fi; \
-	$(MAKE) linux KTARGET=$${KTARGET:-$(@)} "CC = gcc" "CC2 = gcc" \
+	$(MAKE) linux KTARGET=$${KTARGET:-$(@)} "CC = $(CC)" "CC2 = $(CC2)" \
 	"KFLAGS= -DCK_AUTHENTICATION -DCK_ENCRYPTION -DCK_CAST $$HAVE_DES \
 	-DCK_SSL -DCK_PAM -DZLIB -DCK_SHADOW $$OPENSSLOPTION $(SSLINC) \
 	$(KFLAGS)" "LNKFLAGS = $(LNKFLAGS)" \
