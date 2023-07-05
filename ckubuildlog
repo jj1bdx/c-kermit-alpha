@@ -1,0 +1,428 @@
+#!./wermit +
+# CKUBUILDLOG C-Kermit script for UNIX-based operating systems
+#   Frank da Cruz, fdc@columbia.edu, Bronx
+#   and Peter Eichhorn, Munich
+#   5 June 2023
+#   Most recent update:
+#   Mon Jun 26 16:22:43 2023
+#
+.version = 2.13                         # Version
+.verdate = 2023/06/26                   # Date of version
+
+# (v2.10 fixes reporting of OpenSSL version)
+# (v2.11 fixes reporting of Kerberos version)
+# (V2.12 tries harder to find compiler name and version)
+# (V2.13 put "No warnings" in last field if there were no warnings)
+
+set debug message off                   # Use -v on command line to turn on
+
+# This script is distributed with C-Kermit source-code and is to be used
+# on Unix-based platforms (e.g. Linux, BSD, macOS) after compilation and
+# linking to produce a table entry for C-Kermit build log.
+# 
+# Example of use (cd'd to C-Kermit source code directory, which must 
+# include C-Kermit sources and 'wermit' executable.
+#
+#   make linux 2>log
+#   (compilation and linking occurs, producing a 'wermit' executable...)
+#   ./ckubuildlog
+#
+# This produces an xxx.txt file in the same directory, where xxx is the
+# makefile target ("linux" in this example).
+#
+# You don't have to install the script, it comes with C-Kermit 10.0.
+#
+# Usage:  ckubuildlog [ parameters ]
+#   For parameters see: https://www.kermitproject.org/ckbuildlog.html
+#
+# Examples (in the C-Kermit build directory):
+#   ./ckubuildlog (let the script try to figure the OS name a version)
+#   ./ckubuildlog "NetBSD 9.3" (provide hostname and version to the script)
+#
+# Creates a C-Kermit 10.0 Beta test builds-table entry to be sent
+# to me for inclusion in https://kermitproject.org/ck10devbuilds.html.
+#
+# For compiler warnings to be included, C-Kermit must be built like this:
+#
+#   cd ckermit                 (cd to your C-Kermit source code directory)
+#   rm -f log                  (remove any previous log)
+#   make targetname 2>log      (log warnings and errors to file named 'log')
+# 
+# (note: if you use a name other than 'log' you have to specify it
+#  on the ckubuildlog command line, e.g. 'ckubuildlog logfile=build7.log')
+#
+# C-Kermit build examples:
+#
+#   make linux 2>log           (default Linux build)
+#   make linux+ssl 2>log       (Linux with OpenSSL)
+#   make linux+krb5 2>log      (Linux with MIT Kerberos 5)
+#   make linux+krb5+ssl 2>log  (Linux with MIT Kerberos 5 and OpenSSL)
+#   make netbsd 2>log          (default NetBSD build)
+#
+# Note: optional 'make' parameters as in 'make linux KFLAGS="-DNODEBUG"'
+# are not captured by this script but you can specify them on the
+# ckubuildlog command line.
+#   
+# osname-and-version:
+#   There is no standard Unix shell command or utility that returns the
+#   computer's operating-system name and version.  In some cases C-Kermit
+#   (which is executing this script) can find the OS name and version on its
+#   own, in which case they will be in one or more of the following built-in
+#   C-Kermit variables:
+#
+#     \v(osname)
+#     \v(osversion)
+#     \v(osrelease)
+#     \v(platform)
+#
+#   In other cases, for selected OS's, this script's GETOSNAME macro can find
+#   them somewhere in the /etc/*release* or other directories.  As a last
+#   resort, you can simply provide the OS name and version as a command-line
+#   parameter, e.g.:
+# 
+#     ckubuildlog "MINIX 3"
+#     ckubuildlog "Solaris 11" 
+#     ckubuildlog "HP-UX 10.0" 
+#     ckubuildlog "4.2BSD"
+#
+# GETOSNAME clauses for additional platforms are welcome.
+# Note: string comparisons in this script are case-independent
+#
+if not equ "\v(system)" "UNIX" {
+    exit 1 "Sorry, ckubuildlog only works in UNIX-based operating systems"
+}
+undef osname                            # Clear the OS name
+undef resultfile                        # Clear result-file name
+undef kflags                            # Clear KFLAGS
+undef logfile                           # Clear compilation log file name
+undef ccdata                            # Clear C compiler data
+.\%n = 0                                # Command-line parameter counter
+
+if debug show args
+
+while def \%1 {                         # Get parameters from command line
+    incr \%n
+    msg LOOP \%n "\%1"
+    if equ "\%1" "-h" {                 # -h = help
+        msg HELP TEXT
+        echo
+        echo {Usage: ckubuildlog [-v] [-h] ["OS name and version"]}
+        echo "  -v = verbose; -h = help (this message)"
+        echo {  also: resultfile=filename, logfile=filename, -
+kflags="-Dxxxx [-Dyyyy ...]"}
+        echo "  All command-line options are optional."
+        echo "  Order doesn't matter."
+        echo "  Options that contain spaces must be enclosed in doublequotes."
+        echo
+        echo "Instructions:"
+        echo "  cd to the C-Kermit source directory."
+        echo {  Build C-Kermit with "make xxxx 2>log"}
+        echo {  where xxxx is the target from the makefile, e.g. 'linux'.}
+        echo {  '2>log' puts any warnings or errors in a filed named 'log'}
+        echo {  Example: 'make linux 2>log'}
+        echo {  Then run this script, supplying OS and version if necessary.}
+        echo {  Examples:}
+        echo
+        echo {    ckubuildlog}
+        echo {    ckubuildlog "SunOS 4"}
+        echo {    ckubuildlog "HP-UX B10.20"}
+        echo
+        echo {  The results are in the same directory as xxx.txt,}
+        echo {  where xxx is the make target name; e.g. linux.txt}
+        echo {  or, if 'resultfile=xxx' was given, in the file named xxx},
+        echo {  where xxx is a name of your choice.}
+        echo
+        exit
+    }
+    if equ "\%1" "-v" {                 # -v = verbose
+        echo SET DEBUG MESSAGE ON
+        set debug message on
+        shift
+        continue
+    }
+    if \findex(=,\%1) {                 # Keyword parameter
+        msg KEYWORD FROM COMMAND LINE = '\%1'
+        void \fkeywordvalue(\%1);       # Get keyword and its value
+        shift
+        continue
+    } else if def \%1 {
+        msg OSNAME FROM COMMAND LINE = '\%1'
+        .osname := \%1                  # OS name & version from command line
+        shift
+        continue
+    }
+}
+# Macro to get OS name and version for selected OS's; others can be added.
+define GETOSNAME {
+    # Macintosh
+    if ( match "\v(platform)" "mac*" || match "\v(platform)" "*OS_X*" ) {
+        .osname := \freplace(\v(platform),_,\32)
+        return
+    }
+    if exist /etc/release {             # NetBSD...
+        .name := \fcommand(grep NetBSD /etc/release | head -1)
+        if def name {
+            void \fsplit(\m(name),&a,\32/)
+            .osname := \&a[1] \&a[2]
+            return
+       }
+    }
+    if not exist /etc/oracle-release {
+        # Oracle has redhat-release AND oracle-release
+        if exist /etc/redhat-release { # Ret Hat Enterprise Linux
+            .name := \fcommand(grep "Red Hat" /etc/redhat-release | head -1)
+            if def name {
+                void \fsplit(\m(name),&a,\32)
+                .osname := RHEL \&a[7]
+                return
+            }
+        }
+    }
+    if exist /etc/fedora-release {      # Fedora Linux
+        .name := \fcommand(grep "Fedora" /etc/fedora-release | head -1)
+        if def name {
+            .osname := Fedora \fword(\m(name),3)
+            return
+        }
+    }
+    if \findex(HP-UX,\v(osname)) {      # HP-UX
+        local hpccdata &x &y
+        .osname := HP-UX \v(osrelease)
+        .hpccdata := \fcommand(what `whence cc`)
+        if debug show mac hpccdata
+        void \fsplit(\m(hpccdata),&x,$)
+        void \fsplit(\&x[5],&y,\32)
+        .ccdata := HP C Compiler \&y[2]
+        if debug show mac ccdata
+        return
+    }
+    if match \v(platform) OpenBSD* {    # OpenBSD
+        .osname := \freplace(\v(platform),_,\32)
+        return
+    }
+    if equ \v(platform) Linux {         # Common Linux distributions
+        # Centos, Debian, Fedora, Oracle, Red Hat, Rocky, SUSE, ...
+        if exist /etc/os-release {
+            .osname := \fcommand(grep "PRETTY_NAME" /etc/os-release)
+            if def osname {
+                .osname := \fword(\m(osname),2,\")
+            } else {
+                .osname := \fcommand(grep "NAME=" /etc/os-release)
+                if def osname {
+                    .osname := \fword(\m(osname),2,\")
+                    .osversion := \fcommand(grep "VERSION-ID=" /etc/os-release)
+                    .osname := \m(osname) \m(osversion)
+                }
+            }
+            if def osname return             
+        }
+    }
+}
+echo ckubuildlog \m(version) \m(verdate)
+echo "This directory: \v(dir)"          # Orientation
+
+if not def osname getosname             # Get OS name if not passed on cmdline
+
+# Check for makefile
+if not exist makefile exit 1 "makefile not found in \v(dir)"
+
+dir /array:x /count:filecount ck*.[ch]
+if not exist ckcmai.c {
+     echo "Error: ckcmai.c not found in \v(dir)"
+     exit 1 "This script must be run in the C-Kermit build directory"
+}
+if < \m(filecount) 54 {
+    echo "Warning: some C-Kermit source code files seem to be missing"
+}
+undeclare x
+msg C-Kermit source files found.
+
+# Check whether C-Kermit binary (wermit) exists
+if not exist ./wermit {
+    echo 'wermit' binary not found in \v(dir).
+    exit 1 "Please give an appropriate 'make' command to build C-Kermit"
+}
+# Run wermit to get SHOW FEATURES listing into a file
+void \fcommand(./wermit -C "show features" > shofeat.txt, exit)
+if fail exit 1 "wermit SHOW FEATURES failed"
+msg Feature list ok:
+if debug dir shofeat.txt
+
+# Makefile target...
+undef target
+.target := \fword(\fcommand(grep Target: shofeat.txt),2,\32,ALL)
+if not def target { exit 1 "Target not found in shofeat.txt" }
+if debug sho mac target
+
+# Check whether the build failed
+.failed = 0
+if not exist wermit {
+    echo "MOST RECENT BUILD FAILED - wermit binary not found"
+   .failed = 1                          # the build build failed
+    forward :ARCH
+}
+# Build failed but previous wermit still exists
+if exist log {
+    if newer log wermit {
+        echo "MOST RECENT BUILD FAILED - wermit binary older than log"
+        if exist log echo "See log for errors"
+       .failed = 1
+        forward :ARCH
+    }
+}
+# Check whether wermit binary is newer than all the source code modules
+dir /sort:date /reverse /top:1 /array:o ck*.[ch]
+if newer \&o[1] wermit {
+    echo "Error: some source modules are newer that wermit executable..."
+    exit 1 "Please rebuild C-Kermit and run this script again."
+}
+# Check object files
+if \ffiles(ck*.o) {
+    dir /sort:date /reverse /top:1 /array:o ck*.o
+    if newer \&o[1] wermit {
+        echo {'make' command failed - Object file(s) are newer than wermit.}
+        echo {This probably means that the most recent 'make' command failed.}
+        exit 1
+    }
+}
+undeclare o
+
+.banner := \fcommand(grep "C-Kermit " shofeat.txt | grep for)
+if def banner {
+  echo wermit: \m(banner)
+}
+if failed {                             # If the build failed...
+    .size = N/A
+} else {
+    msg wermit executable found and up-to-date.
+    if debug dir wermit
+    .size := \fsize(wermit)
+    if not numeric \m(size) .size = (unknown)
+}
+msg Size: \m(size) bytes
+
+# Architecture...
+:ARCH
+undef arch
+.arch := \fword(\fcommand(grep Machine: shofeat.txt),2,\32)
+if debug sho mac arch
+
+.maxnamelen := 72
+if not def osname {
+    .tmpname := \fcommand(grep "OS Version:" shofeat.txt)
+    .dots =
+    if > \flen(\m(tmpname)) \m(maxnamelen) .dots := ...
+    .osname := \s(tmpname[14:\m(maxnamelen)])\m(dots)
+    if debug sho mac osname
+}
+# Kermit code date from ckcmai.c
+undef codedate
+.tmpdate := \fcommand(grep EDITNDATE ckcmai.c | head -1)
+void \fsplit(\m(tmpdate),&a)
+# show array a
+.codedate := \fleft(\freplace(\fcvtdate(\&a[3],5),:,-),10)
+if debug show mac codedate
+
+# Look for compiler name and version
+.maxcclen := 72
+undef cc
+.\%c = 0
+.tag := "GCC version:"
+.tmpcc := \fcommand(grep "\m(tag)" shofeat.txt)
+# NOTE: can also look for __DECC and __DECC_VER in shofeat.txt.
+if def tmpcc {
+    .\%c = 1
+} else {
+    .tag = "Compiler version:"
+    .tmpcc := \fcommand(grep "\m(tag)" shofeat.txt)
+    if def tmpcc {
+        .\%c = 2
+    } else if def ccdata {
+        .\%c = 3
+        .tmpcc := \m(ccdata)
+    } else {
+        .tmpcc := \fcommand(strings wermit | egrep -i "(cc |gcc|clang)"
+        if def tmpcc .\%c = 4
+        else .tmpcc = "(unknown)"
+    }
+}    
+if def tmpcc {
+    .tmpcc := \freplace(\m(tmpcc),{Compiler version: },)
+}
+msg tmpcc[\%c] = \m(tmpcc)
+if > \%c 0 {
+    .dots =
+    .tmpcc := \fltrim(\freplace(\m(tmpcc),GCC version:,))
+    if numeric \s(tmpcc[1.]) .tmpcc := gcc \m(tmpcc)
+    # .tmpcc := \fltrim(\freplace(\m(tmpcc),\m(tag),))
+    if not \fverify(0123456789.,\m(tmpcc)) .tmpcc := "gcc \m(tmpcc)"
+    if debug show mac tmpcc
+    if > \flen(\m(tmpcc)) \m(maxcclen) .dots := ...
+    .cc := \m(tmpcc)\m(dots)
+}
+if debug sho mac cc
+
+.security = 
+.ssl =
+if \findex(ssl,\m(target)) {
+    .ssl := \fcommand(openssl version)
+    .security := \m(ssl)
+}
+.krb5 = 
+if \findex(krb5,\m(target)) {
+    .krb5 := \fcommand(krb5-config --version)
+    .security := \m(security) \m(krb5)
+}
+.tmpsecurity := \m(security)
+if not def security .tmpsecurity = (none)
+msg Security: \m(tmpsecurity)
+if failed {
+    .status = Failed
+} else {
+    .status = OK
+}
+if not def resultfile .resultfile := \m(target).txt
+if not def logfile .logfile := log
+fopen /write \%o \m(resultfile)
+if fail exit 1 Can't create \m(target).txt
+fwrite /line \%o <tr>
+fwrite /line \%o <td>\m(osname)
+fwrite /line \%o <td>\m(arch)
+if def kflags {
+    .kflags := KFLAGS="\m(kflags)"
+}
+fwrite /line \%o <td>make \m(target) \m(kflags)
+fwrite /line \%o <td>\m(codedate)
+fwrite /line \%o <td>\m(size)
+fwrite /line \%o <td>\m(cc)
+fwrite /line \%o <td>\m(security)
+fwrite /line \%o <td>\m(status)
+
+echo Executable:
+dir wermit
+if def logfile {
+    if not exist \m(logfile) {
+        echo "No log file found - if there were warnings or errors,"
+        xecho "please 'make clean' and then rebuild with "
+        echo "'make \m(target) 2> log', thanks."
+    } else if > \fsize(\m(logfile)) 0 {
+        echo "(there were some warnings or errors):"
+        dir \m(logfile)
+        fwrite \%o <td>
+        fclose \%o
+        copy /append \m(logfile) \m(resultfile)
+    } else {
+        fwrite /line \%o <td>No warnings
+    }
+}
+if \f_status(\%o) fclose \%o
+echo ckubuildlog done, result (please email it to fdc@columbia.edu):
+dir \m(resultfile)
+type \m(resultfile)
+
+exit
+
+; Local Variables:
+; comment-column:40
+; comment-start:"# "
+; End:
