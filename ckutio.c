@@ -1,12 +1,12 @@
 #define CKUTIO_C
 
 #ifdef aegis
-char *ckxv = "Aegis Communications support, 10.0.339, 02 May 2023";
+char *ckxv = "Aegis Communications support, 10.0.340, 16 May 2023";
 #else
 #ifdef Plan9
-char *ckxv = "Plan 9 Communications support, 10.0.339, 02 May 2023";
+char *ckxv = "Plan 9 Communications support, 10.0.340, 16 May 2023";
 #else
-char *ckxv = "UNIX Communications support, 10.0.339, 02 May 2023";
+char *ckxv = "UNIX Communications support, 10.0.340, 16 May 2023";
 #endif /* Plan9 */
 #endif /* aegis */
 
@@ -3581,8 +3581,14 @@ ttclos(foo) int foo;
     if (ttyfd < 0)			/* Wasn't open. */
       return(0);
 
-    if (ttfdflg)			/* If we inherited ttyfd from */
-      return(0);			/* another process, don't close it. */
+#ifdef IKSD                             /* (Jeff Johnson 16 May 2023) */
+    if (!inserver) {                    /* Only if not an IKSD server */
+#endif /* IKSD */
+        if (ttfdflg)                     /* If we inherited ttyfd from */
+          return(0);                     /* another process, don't close it. */
+#ifdef IKSD
+    }
+#endif /* IKSD */
 
     tvtflg = 0;				/* (some day get rid of this...) */
     gotsigs = 0;

@@ -1,8 +1,8 @@
 # makefile / Makefile / ckuker.mak / CKUKER.MAK
 #
-# Tue May  9 14:03:56 2023
-BUILDID=20230506
-CKVER= "10.0 Beta.09"
+# Mon Jul  3 19:28:58 2023
+BUILDID=20230703
+CKVER= "10.0 pre-Beta.10"
 #
 # -- Makefile to build C-Kermit for UNIX and UNIX-like platforms --
 #
@@ -1776,25 +1776,16 @@ freebsd40:
 
 #FreeBSD 4.1 and above
 #Like FreeBSD 4.0 but without the NONOSETBUF hack and with CK_NEWTERM.
-#NOTE: This target definitely does not work for FreeBSD 3.3 in 9.0.302.
-#and it has not been tested on 4 or 5.
-#OK 2011/06/xx FreeBSD 3.3, 4,4, 4.7, and 8.2
-#OK 2011/08/21 FreeBSD 3.3, 4.4, 6.4, 9.0
-#Added clause for <sys/wait.h> to squelch implicit-declaration warnings
-#Most recently tested on FreeBSD 13.1 (29 April 2023)
-#There is still "sys/timeb.h is deprecated" warning...  This could be
-#squelched with a complicated test to see if <sys/timeb.h> exists and
-#if not then define NOSYSTIMEBH, but if so then grep it for the word
-#"deprecated" and if found define NOSYSTIMEBH, otherwise don't define it,
-#and then finally if NOSYSTIMEBH is defined, to include $$_NOSYSTIMEBH
-#on the make command line.
+#New stanza 27 June 2023 to squelch "sys/timeb.h deprecated" warning.
+#Most recently tested on FreeBSD 13.1
+#
 freebsd freebsd41 freebsd72 freebsd5 freebsd6 freebsd7 freebsd8 freebsd9:
 	@echo 'Making C-Kermit $(CKVER) for FreeBSD 4.1 or later...'
 	@if test `uname -r | cut -d . -f 1` -ge 8; then \
 	   HAVE_FBSD8='-DFREEBSD8'; \
 	else HAVE_FBSD8=''; fi; \
 	if test `uname -r | cut -d . -f 1` -ge 9; then \
-	   HAVE_FBSD9='-DFREEBSD9'; \
+	HAVE_FBSD9='-DFREEBSD9'; \
 	else HAVE_FBSD9='';  fi; \
 	if test -f /usr/include/utmpx.h ; \
 	then HAVE_UTMPX='-DHAVEUTMPX' ; \
@@ -1802,10 +1793,16 @@ freebsd freebsd41 freebsd72 freebsd5 freebsd6 freebsd7 freebsd8 freebsd9:
 	if test -f /usr/include/sys/wait.h ; \
 	then HAVE_WAITH='-DHAVEWAITH' ; \
 	else HAVE_WAITH='' ; fi; \
+	NOSYSTIMEBH="-DNOSYSTIMEBH" ; \
+	if test -f /usr/include/sys/timeb.h ; \
+	then x=`grep deprecated /usr/include/sys/timeb.h | wc -l` ; \
+	if [ $x > 0 ] ; \
+	then NOSYSTIMEBH='' ; fi ; fi ; \
 	$(MAKE) CC=$(CC) CC2=$(CC2) xermit KTARGET=$${KTARGET:-$(@)} \
 	"CFLAGS= -DBSD44 -DCK_NCURSES -DCK_NEWTERM -DTCPSOCKET -DNOCOTFMC \
 	-DFREEBSD4 $$HAVE_FBSD8 $$HAVE_FBSD9 -DUSE_UU_LOCK -DFNFLOAT \
-	$$HAVE_UTMPX $$HAVE_WAITH -DHERALD=\"\\\" `uname -rs`\\\"\" \
+	$$HAVE_UTMPX $$HAVE_WAITH $$NOSYSTIMEBH \
+	-DHERALD=\"\\\" `uname -rs`\\\"\" \
 	-funsigned-char -DTPUTSARGTYPE=int -DUSE_STRERROR $(KFLAGS) \
 	-O2 -pipe"\
 	"LIBS= -lncurses -lcrypt -lutil -lm $(LIBS)"
@@ -1867,7 +1864,10 @@ netbsd netbsd2 netbsd15 netbsd16 old-netbsd:
 	-DTIMEH	-DBSD44 -DCK_CURSES -DTCPSOCKET -DUSE_STRERROR \
 	-funsigned-char -DHERALD=\"\\\" `uname -s -r`\\\"\" \
 	-DCK_DTRCD -DCK_DTRCTS -DTPUTSARGTYPE=int -DFNFLOAT $(KFLAGS) -O" \
-	"LIBS= -lcurses -lcrypt -lm -lutil $(LIBS)"
+	"LIBS= -lcurses -lcrypt -lm -lutil $(LIBS)" ; $(shell ./ckubuildlog)
+
+buildlog:
+	@(shell ./ckubuildlog -v)
 
 netbsd-clang netbsdclang:
 	# Dummy comment \
@@ -2208,12 +2208,14 @@ openbsdold:
 # or absence of term.h (curses) sys/timeb.h (dates and times).
 openbsd:
 	@echo Making C-Kermit $(CKVER) for OpenBSD 2.3 or later...
+	NOTIMEBH='' ;
 	if test -f /usr/include/sys/timeb.h ; \
-	then NOSYSTIMEBH='' ; \
+	then if `grep deprecated /usr/include/sys/timeb.h` ; \
+	then NOSYSTIMEBH='-DNOSYSTIMEBH' ; fi ; \
 	else NOSYSTIMEBH='-DNOSYSTIMEBH' ; fi; \
-	if test -f /usr/include/term.h ; \
+	if test -f /usr/include/sys/term.h ; \
 	then HAVETERMH='-DHAVETERMH' ; \
-	else NOSYSTIMEBH='' ; fi; \
+	else HAVETERMH='' ; fi; \
 	if test -f /usr/include/sys/wait.h ; \
 	then HAVE_WAITH='-DHAVEWAITH' ; \
 	else HAVE_WAITH='' ; fi; \
@@ -2234,12 +2236,17 @@ mirbsd:
 	"LIBS= -lcurses -lutil -lm"
 
 #OpenBSD 3.0 or later includes OpenSSL
+#OLD COMMENTS:
 #Add -DMAINTYPE=int if you get complaints about main: return type is not int.
 #For C-Kermit 8.0 (Christian Weisgerber):
 # -ltermlib removed (presumably because -lcurses==ncurses already includes it)
 # -DUSE_UU_LOCK and -lutil added for uu_lock()
 # -DNDSYSERRLIST changed to -DUSE_STRERROR
 #If this gives you trouble use the previous entry.
+#
+#NEW COMMENT 3 July 2023:
+#This doesn't work at all...  Compare with 'make freebsd+ssl'.
+#Somebody is fluent in OpenSSL *and* OpenBSD should fix this entry.
 openbsd+ssl:
 	@echo Making C-Kermit $(CKVER) for OpenBSD 3.0 or later...
 	$(MAKE) CC=$(CC) CC2=$(CC2) xermit KTARGET=$${KTARGET:-$(@)} \
@@ -6960,6 +6967,13 @@ linux+krb5+krb4:
 # and des_set_odd_parity.  In that case, "make linux KFLAGS=-UCK_DES"
 # There's a new warning at the end that should come out if this happens,
 # and that should not come out if it didn't.
+#
+# Newer versions of OpenSSL cause profuse "-Wdeprecated-declarations"
+# warnings, meaning C-Kermit's SSL code needs to be updated to allow (by
+# copious use if #ifdefs) for both old and new versions.  Also it has been
+# noted that libpam0g-dev must be installed for OpenSSL 3 builds, which
+# is needed for /usr/include/security/pam_appl.h, which ckufio.c #includes.
+# - fdc 14 May 2023
 #
 linux+ssl linux+openssl linux+openssl+zlib+shadow+pam linux+openssl+shadow:
 	@echo 'Making C-Kermit $(CKVER) for Linux+OpenSSL SSLLIB=$(SSLLIB)'
