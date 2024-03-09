@@ -4,16 +4,20 @@
 #   and Peter Eichhorn, Munich
 #   5 June 2023
 #   Most recent update:
-#   Mon Jun 26 16:22:43 2023
+#   Sun Sep 24 10:00:17 2023
 #
-.version = 2.13                         # Version
-.verdate = 2023/06/26                   # Date of version
+.version = 2.15                         # Version
+.verdate = 2023/09/24                   # Date of version
 
 # (v2.10 fixes reporting of OpenSSL version)
 # (v2.11 fixes reporting of Kerberos version)
 # (V2.12 tries harder to find compiler name and version)
 # (V2.13 put "No warnings" in last field if there were no warnings)
-
+# (V2.14 Don't "copy /append" on Macintosh - it clobbers the original file)
+# (V2.15 Undoes previous change and fixes a syntax error in:
+#   .tmpcc := \fcommand(strings wermit | egrep -i "(cc |gcc|clang)")
+#   (final paren was missing) and adds support for SunOS and Solaris
+#
 set debug message off                   # Use -v on command line to turn on
 
 # This script is distributed with C-Kermit source-code and is to be used
@@ -153,6 +157,10 @@ kflags="-Dxxxx [-Dyyyy ...]"}
     }
 }
 # Macro to get OS name and version for selected OS's; others can be added.
+# WARNING: This requires C-Kermit to have BIGBUFOK defined in ckcdeb.h.
+#
+#if def osname forward :SKIPOSNAME
+
 define GETOSNAME {
     # Macintosh
     if ( match "\v(platform)" "mac*" || match "\v(platform)" "*OS_X*" ) {
@@ -196,6 +204,13 @@ define GETOSNAME {
         if debug show mac ccdata
         return
     }
+    if match \v(platform) SunOS* {      # SunOS
+        .osname := \v(osname) \v(osrelease)
+        return
+    } else if match \v(platform) Solaris* { # Solaris
+        .osname := \v(osname) \v(osrelease)
+        return
+    }
     if match \v(platform) OpenBSD* {    # OpenBSD
         .osname := \freplace(\v(platform),_,\32)
         return
@@ -218,6 +233,8 @@ define GETOSNAME {
         }
     }
 }
+:SKIPOSNAME
+
 echo ckubuildlog \m(version) \m(verdate)
 echo "This directory: \v(dir)"          # Orientation
 
@@ -247,7 +264,11 @@ void \fcommand(./wermit -C "show features" > shofeat.txt, exit)
 if fail exit 1 "wermit SHOW FEATURES failed"
 msg Feature list ok:
 if debug dir shofeat.txt
-
+void \fcommand(grep BIGBUFOK shofeat.txt)
+if fail {
+    echo WARNING: BIGBUFOK not defined in this C-Kermit build
+    echo Some operations might fail
+}
 # Makefile target...
 undef target
 .target := \fword(\fcommand(grep Target: shofeat.txt),2,\32,ALL)
@@ -273,7 +294,7 @@ if exist log {
 # Check whether wermit binary is newer than all the source code modules
 dir /sort:date /reverse /top:1 /array:o ck*.[ch]
 if newer \&o[1] wermit {
-    echo "Error: some source modules are newer that wermit executable..."
+    echo "Error: some source modules are newer than the wermit executable..."
     exit 1 "Please rebuild C-Kermit and run this script again."
 }
 # Check object files
@@ -341,7 +362,7 @@ if def tmpcc {
         .\%c = 3
         .tmpcc := \m(ccdata)
     } else {
-        .tmpcc := \fcommand(strings wermit | egrep -i "(cc |gcc|clang)"
+        .tmpcc := \fcommand(strings wermit | egrep -i "(cc |gcc|clang)")
         if def tmpcc .\%c = 4
         else .tmpcc = "(unknown)"
     }

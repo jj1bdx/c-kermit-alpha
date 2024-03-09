@@ -589,6 +589,11 @@ _PROTOTYP( struct passwd * getpwent, (void) );
 #define PAM_SERVICE_TYPE "kermit"
 #endif /* PAM_SERVICE_TYPE */
 
+#ifdef __APPLE__
+#include <sys/timeb.h>
+#include <sys/time.h>
+#endif /* __APPLE__ */
+
 #ifdef SOLARIS
 #define PAM_CONST 
 #else /* SOLARIS */
@@ -5084,7 +5089,9 @@ zstrdt(date,len) char * date; int len;
 #endif /* ODT30 */
 #else
 #ifndef M_XENIX
+#ifndef __APPLE__
     extern int ftime();
+#endif
 #endif /* M_XENIX */
 #endif /* M_UNIX */
 
@@ -5372,7 +5379,9 @@ zlocaltime(gmtstring) char * gmtstring;
 #endif /* ODT30 */
 #else
 #ifndef M_XENIX
+#ifndef __APPLE__    
     extern int ftime();
+#endif /* __APPLE__*/
 #endif /* M_XENIX */
 #endif /* M_UNIX */
 
@@ -5597,7 +5606,9 @@ zstime(f,yy,x) char *f; struct zattr *yy; int x;
 
 #ifdef TIMESTAMP
 #ifdef BSD44
+#ifndef __APPLE__
     extern int utimes();
+#endif /* __APPLE__ */
 #endif /* BSD44 */
 
     struct stat sb;

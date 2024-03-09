@@ -1,17 +1,26 @@
 # makefile / Makefile / ckuker.mak / CKUKER.MAK
 #
-# Mon Jul  3 19:28:58 2023
-BUILDID=20230703
-CKVER= "10.0 pre-Beta.10"
+# Sat Feb  3 20:18:26 2024
+BUILDID=20240203
+CKVER= "10.0 pre-Beta.11"
 #
 # -- Makefile to build C-Kermit for UNIX and UNIX-like platforms --
 #
-# Copyright (C) 1985, 2023,
+# Copyright (C) 1985, 2024,
 #   Trustees of Columbia University in the City of New York.
 #   All rights reserved.  See the C-Kermit COPYING.TXT file or the
 #   copyright text in the ckcmai.c module for disclaimer and permissions.
-#   In case you can't find the COPYING.TXT file, it contains the 
+#   In case you can't find the COPYING.TXT file, as of 2011 it contains the
 #   Simplified 3-Clause BSD License, which is an Open Source license.
+#
+# Note: As of 3 February 2024, the ckcwart.c and ckcpro.w files have been
+# reinstated.  They are not used when building C-Kermit, but any changes to
+# to the Kermit protocol itself must be made ckcpro.w, and then you must:
+#
+#   make wart
+#   make ckcpro.c
+#
+# before building C-Kermit (e.g. with "make linux").
 #
 # Author: Frank da Cruz (principal author)
 # Email:  fdc@kermitproject.org
@@ -1024,10 +1033,11 @@ clean:
 	-rm -f ckcmai.$(EXT) ckucmd.$(EXT) ckuusr.$(EXT) ckuus2.$(EXT) \
 ckuus3.$(EXT) ckuus4.$(EXT) ckuus5.$(EXT) ckcpro.$(EXT) ckcfns.$(EXT) \
 ckcfn2.$(EXT) ckcfn3.$(EXT) ckuxla.$(EXT) ckucon.$(EXT) ckutio.$(EXT) \
-ckufio.$(EXT) ckudia.$(EXT) ckuscr.$(EXT) ckuusx.$(EXT) ckuusy.$(EXT) \
-ckcnet.$(EXT) ckuus6.$(EXT) ckuus7.$(EXT) ckusig.$(EXT) ckucns.$(EXT) \
-ckcmdb.$(EXT) ckuath.$(EXT) ckctel.$(EXT) ckclib.$(EXT) ckcuni.$(EXT) \
-ck_crp.$(EXT) ck_ssl.$(EXT) ckupty.$(EXT) ckcftp.$(EXT) ckcpro.$(EXT)
+ckufio.$(EXT) ckudia.$(EXT) ckuscr.$(EXT) ckwart.$(EXT) ckuusx.$(EXT) \
+ckuusy.$(EXT) ckcnet.$(EXT) ckuus6.$(EXT) ckuus7.$(EXT) ckusig.$(EXT) \
+ckucns.$(EXT) ckcmdb.$(EXT) ckuath.$(EXT) ckctel.$(EXT) ckclib.$(EXT) \
+ckcuni.$(EXT) ck_crp.$(EXT) ck_ssl.$(EXT) ckupty.$(EXT) ckcftp.$(EXT) \
+ckcpro.c wart
 
 show:
 	@echo prefix=$(prefix)
@@ -1461,6 +1471,13 @@ ckcmai.$(EXT): ckcmai.c ckcker.h ckcdeb.h ckcsym.h ckcasc.h ckcnet.h ckcsig.h \
 		ckuusr.h ckctel.h ckclib.h ckcfnp.h
 
 ckclib.$(EXT): ckclib.c ckclib.h ckcdeb.h ckcasc.h ckcsym.h ckcfnp.h
+
+wart: ckwart.$(EXT)
+	$(CC) $(LNKFLAGS) -o wart ckwart.$(EXT) $(LIBS)
+
+ckcpro.c: ckcpro.w wart ckcdeb.h ckcsym.h ckcasc.h ckcker.h ckcnet.h ckctel.h \
+	 ckclib.h
+	./wart ckcpro.w ckcpro.c
 
 ckcfns.$(EXT): ckcfns.c ckcker.h ckcdeb.h ckcsym.h ckcasc.h ckcxla.h ckcuni.h \
 		ckuxla.h ckclib.h ckcnet.h ckcfnp.h
@@ -2235,23 +2252,17 @@ mirbsd:
 	-DUSE_UU_LOCK -DFNFLOAT -DUSE_STRERROR $(KFLAGS) -O" \
 	"LIBS= -lcurses -lutil -lm"
 
-#OpenBSD 3.0 or later includes OpenSSL
-#OLD COMMENTS:
-#Add -DMAINTYPE=int if you get complaints about main: return type is not int.
-#For C-Kermit 8.0 (Christian Weisgerber):
-# -ltermlib removed (presumably because -lcurses==ncurses already includes it)
-# -DUSE_UU_LOCK and -lutil added for uu_lock()
-# -DNDSYSERRLIST changed to -DUSE_STRERROR
-#If this gives you trouble use the previous entry.
-#
-#NEW COMMENT 3 July 2023:
-#This doesn't work at all...  Compare with 'make freebsd+ssl'.
-#Somebody is fluent in OpenSSL *and* OpenBSD should fix this entry.
+#New OpenBSD + OpenSSL target from Piotr Kolasinski, 18 September 2023...
 openbsd+ssl:
 	@echo Making C-Kermit $(CKVER) for OpenBSD 3.0 or later...
+	NOTIMEBH='' ;
+	if test -f /usr/include/sys/timeb.h ; \
+	then if `grep deprecated /usr/include/sys/timeb.h` ; \
+	then NOSYSTIMEBH='-DNOSYSTIMEBH' ; fi ; \
+	else NOSYSTIMEBH='-DNOSYSTIMEBH' ; fi; \
 	$(MAKE) CC=$(CC) CC2=$(CC2) xermit KTARGET=$${KTARGET:-$(@)} \
 	"CFLAGS= -DBSD44 -DCK_CURSES -DCK_NEWTERM -DTCPSOCKET -DOPENBSD \
-	-DHERALD=\"\\\" OpenBSD `uname -r`\\\"\" \
+	$$NOSYSTIMEBH -DHERALD=\"\\\" OpenBSD `uname -r`\\\"\" \
 	-DUSE_UU_LOCK -DFNFLOAT -DUSE_STRERROR -DCK_AUTHENTICATION \
 	-DCK_SSL $(KFLAGS) -O" \
 	"LIBS= -lcurses -lutil -lm -lssl -lcrypto"
