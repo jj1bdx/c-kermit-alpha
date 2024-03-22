@@ -1,7 +1,7 @@
 # makefile / Makefile / ckuker.mak / CKUKER.MAK
 #
-# Sat Feb  3 20:18:26 2024
-BUILDID=20240203
+# Thu Mar 21 14:30:57 2024
+BUILDID=20240321
 CKVER= "10.0 pre-Beta.11"
 #
 # -- Makefile to build C-Kermit for UNIX and UNIX-like platforms --
