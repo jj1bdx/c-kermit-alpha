@@ -764,6 +764,14 @@ pam_cb(num_msg, msg, resp, appdata_ptr)
 #ifndef S_IXOTH
 #define S_IXOTH 0000001
 #endif /* S_IXOTH */
+
+
+#ifdef COMMENT
+/* 2024-03-23 SMS.
+ * Code here was changed to use CKMAXNAM instead of MAXNAMLEN.
+ * CKMAXNAM is defined in ckcdeb.h, instead of defining MAXNAMLEN here.
+ */
+
 /*
   Define maximum length for a file name if not already defined.
   NOTE: This applies to a path segment (directory or file name),
@@ -804,6 +812,9 @@ pam_cb(num_msg, msg, resp, appdata_ptr)
 #endif /* sun */
 #endif /* MAXNAMLEN */
 #endif /* QNX */
+
+#endif /* COMMENT  2024-03-23 SMS. */
+
 
 #ifdef COMMENT
 /* As of 2001-11-03 this is handled in ckcdeb.h */
@@ -934,7 +945,7 @@ extern int nopush;
  * traversing the name easier.
  */
 struct path {
-    char npart[MAXNAMLEN+4];            /* name part of path segment */
+    char npart[CKMAXNAM+4];            /* name part of path segment */
     struct path *fwd;                   /* forward ptr */
 };
 #ifndef NOPUSH
@@ -1285,8 +1296,6 @@ cksyslog(n, m, s1, s2, s3) int n, m; char * s1, * s2, * s3; {
 
 /* Declarations */
 
-int maxnam = MAXNAMLEN;                 /* Available to the outside */
-int maxpath = MAXPATH;
 int ck_znewn = -1;
 
 #ifdef UNIX
@@ -2925,7 +2934,7 @@ nzrtol(name,name2,fncnv,fnrpath,max) char *name,*name2;int fncnv,fnrpath,max;
 
 #ifndef NOTRUNCATE
 /*
-  The maximum length for any segment of a filename is MAXNAMLEN, defined
+  The maximum length for any segment of a filename is CKMAXNAM, defined
   above.  On some platforms (at least QNX) if a segment exceeds this limit,
   the open fails with ENAMETOOLONG, so we must prevent it by truncating each
   overlong name segment to the maximum segment length before passing the
@@ -2937,9 +2946,9 @@ nzrtol(name,name2,fncnv,fnrpath,max) char *name,*name2;int fncnv,fnrpath,max;
         char *p = fullname;             /* Source and  */
         char *s = buf;                  /* destination pointers */
         int i = 0, n = 0;
-        debug(F101,"nzrtol sizing MAXNAMLEN","",MAXNAMLEN);
+        debug(F101,"nzrtol sizing CKMAXNAM","",CKMAXNAM);
         while (*p && n < CKMAXPATH) {   /* Copy name to new buffer */
-            if (++i > MAXNAMLEN) {      /* If this segment too long */
+            if (++i > CKMAXNAM) {      /* If this segment too long */
                 while (*p && *p != '/') /* skip past the rest... */
                   p++;
                 i = 0;                  /* and reset counter. */
@@ -2962,7 +2971,7 @@ nzrtol(name,name2,fncnv,fnrpath,max) char *name,*name2;int fncnv,fnrpath,max;
     name = fullname;                    /* Converting */
 
     p = name2;
-    for (; *name != '\0' && n < maxnam; name++) {
+    for (; *name != '\0' && n < CKMAXNAM; name++) {
         if (*name > SP) flag = 1;       /* Strip leading blanks and controls */
         if (flag == 0 && *name < '!')
           continue;
@@ -4150,7 +4159,7 @@ znewn(fn,s) char *fn, **s;
     struct zfnfp * fnfp;                /* znfqfp() result struct pointer */
     int d = 0, t, fnlen, buflen;
     int n, i, k, flag, state;
-    int max = MAXNAMLEN;                /* Maximum name length */
+    int max = CKMAXNAM;                /* Maximum name length */
     char * dname = NULL;
 
     buf = znewbuf;
@@ -6183,22 +6192,22 @@ splitpath(p) char *p;
             strcpy(cur->npart, "..");	/* safe */
             ++p;
         } else {
-            for (i=0; i < MAXNAMLEN && *p && *p != '/' && *p != bslash; i++)
+            for (i=0; i < CKMAXNAM && *p && *p != '/' && *p != bslash; i++)
               cur -> npart[i] = *p++;
             cur -> npart[i] = '\0';     /* end this segment */
-            if (i >= MAXNAMLEN)
+            if (i >= CKMAXNAM)
               while (*p && *p != '/' && *p != bslash)
                 p++;
         }
         if (*p == '/') p++;
 #else
         /* General case (UNIX) */
-        for (i = 0; i < MAXNAMLEN && !ISDIRSEP(*p) && *p != '\0'; i++) {
+        for (i = 0; i < CKMAXNAM && !ISDIRSEP(*p) && *p != '\0'; i++) {
             cur -> npart[i] = *p++;
         }
 
         cur -> npart[i] = '\0';         /* End this path segment */
-        if (i >= MAXNAMLEN)
+        if (i >= CKMAXNAM)
           while (!ISDIRSEP(*p) && *p != '\0') p++;
         if (ISDIRSEP(*p))
           p++;
@@ -6433,7 +6442,7 @@ traverse(pl,sofar,endcur) struct path *pl; char *sofar, *endcur;
     int mopts = 0;			/* ckmatch() opts */
     int depth = 0;			/* Directory tree depth */
 
-    char nambuf[MAXNAMLEN+4];           /* Buffer for a filename */
+    char nambuf[CKMAXNAM+4];           /* Buffer for a filename */
     int itsadir = 0, segisdir = 0, itswild = 0, mresult, n, x /* , y */ ;
     struct stat statbuf;                /* For file info. */
 
@@ -6673,7 +6682,7 @@ traverse(pl,sofar,endcur) struct path *pl; char *sofar, *endcur;
 
           ckstrncpy(nambuf,             /* Copy the name */
                   dirbuf->d_name,
-                  MAXNAMLEN
+                  CKMAXNAM
                   );
           if (nambuf[0] == '.') {
               if (!nambuf[1] || (nambuf[1] == '.' && !nambuf[2])) {
@@ -7410,7 +7419,7 @@ iswild(filespec) char *filespec;
         if ((x = nzxpand(filespec,0)) > 1)
           return(1);
         if (x == 0) return(0);          /* File does not exist */
-        p = malloc(MAXNAMLEN + 20);
+        p = malloc(CKMAXNAM + 20);
         znext(p);
         x = (strcmp(filespec,p) != 0);
         free(p);

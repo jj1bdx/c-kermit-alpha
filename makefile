@@ -1,8 +1,8 @@
 # makefile / Makefile / ckuker.mak / CKUKER.MAK
 #
-# Thu Mar 21 14:30:57 2024
-BUILDID=20240321
-CKVER= "10.0 pre-Beta.11"
+# Thu Aug  8 12:25:04 2024
+BUILDID=20240808
+CKVER= "10.0 Beta.11"
 #
 # -- Makefile to build C-Kermit for UNIX and UNIX-like platforms --
 #
@@ -2472,9 +2472,9 @@ macos+ssl macos+openssl:
 	SSLINC=$${KSSLINC:-$(SSLINC)}; \
 	SSLLIB=$${KSSLLIB:-$(SSLLIB)}; \
 	$(MAKE) CC=$(CC) CC2=$(CC2) macos KTARGET=$${KTARGET:-$(@)} \
-	"KFLAGS=-DCK_AUTHENTICATION -DCK_SSL \
+	"KFLAGS=-DCK_AUTHENTICATION -DCK_SSL $(KCFLAGS) \
 	$$OPENSSLOPTION $$ZLIBFLAG $$SSLINC" \
-	"LIBS= -lncurses -lresolv $$SSLLIB -lssl -lcrypto $$ZLIBOPT $(KLIBS)"
+	"LIBS= $$SSLLIB -lssl -lcrypto $$ZLIBOPT $(KLIBS)"
 
 macos+ssl-zlib macos+openssl-zlib:
 	$(MAKE) macos+ssl KTARGET=$${KTARGET:-$(@)}
