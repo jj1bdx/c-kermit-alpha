@@ -2512,6 +2512,8 @@ macos+krb5+ssl macos+krb5+openssl:
 --libs krb5 gssapi` ; \
 	else HAVE_KRB5CONFIG='-lgssapi_krb5 -lkrb5 -lk5crypto \
 	-lcom_err -lresolv' ; fi; \
+	SSLINC=-I${HOMEBREW_PREFIX}/opt/openssl/include ; \
+	SSLLIB=-L${HOMEBREW_PREFIX}/opt/openssl/lib ; \
 	$(MAKE) CC=$(CC) CC2=$(CC2) xermit KTARGET=$${KTARGET:-$(@)} \
 	"CFLAGS=-Wno-dangling-else -DMACOSX10 $$IS_MACOSX103 -DCK_NCURSES \
 	-DTCPSOCKET -DUSE_STRERROR -DUSE_NAMESER_COMPAT -DNOCHECKOVERFLOW \

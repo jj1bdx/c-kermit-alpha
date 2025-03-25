@@ -222,6 +222,17 @@ _PROTOTYP(int krb5_u2u_write,(int,char *,int));
 _PROTOTYP(int krb5_u2u_read, (int,char *,int));
 _PROTOTYP(int k5_user_to_user_server_auth,(VOID));
 _PROTOTYP(int k5_user_to_user_client_auth,(VOID));
+
+#ifdef MACOSX
+#ifdef KRB5
+#include <krb5/krb5.h>
+_PROTOTYP(int k5_u2u_read_msg,(krb5_context context, int fd, krb5_data * msg));
+_PROTOTYP(int k5_u2u_write_msg,(krb5_context context, int fd, krb5_data * msgtext));
+_PROTOTYP(krb5_error_code ck_krb5_write_message,(krb5_context con, krb5_pointer ptr, krb5_data *data));
+_PROTOTYP(krb5_error_code ck_krb5_read_message, (krb5_context context, krb5_pointer ptr, krb5_data * data));
+#endif KRB5 /* KRB5 */
+#endif MACOSX /* MACOSX */
+
 #endif /* CK_KERBEROS */
 
 _PROTOTYP(int ck_krb5_is_installed,(void));
