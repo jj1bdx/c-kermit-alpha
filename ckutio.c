@@ -1083,6 +1083,54 @@ struct timezone {
 #endif /* UNIXWAREPOSIX */
 #endif /* SVORPOSIX */
 
+/* MACOS allows setting non posix speeds using IOSSIOSPEED ioctl */
+#ifdef MACOSHISPEED
+#include <IOKit/serial/ioss.h>
+#define MACOSHISPEED_START B307200
+#ifndef B307200
+#define B307200 307200
+#endif /* B307200 */
+#ifndef B460800
+#define B460800 460800
+#endif /* 460800 */
+#ifndef B500000
+#define B500000 500000
+#endif /* B500000 */
+#ifndef B576000
+#define B576000 576000
+#endif /* B576000 */
+#ifndef B614400
+#define B614400 614400
+#endif /* B614400 */
+#ifndef B921600
+#define B921600 921600
+#endif /* B921600 */
+#ifndef B1000000
+#define B1000000 1000000
+#endif /* B1000000 */
+#ifndef B1152000
+#define B1152000 1152000
+#endif /* B1152000 */
+#ifndef B1500000
+#define B1500000 1500000
+#endif /* B1500000 */
+#ifndef B2000000
+#define B2000000 2000000
+#endif /* B2000000 */
+#ifndef B2500000
+#define B2500000 2500000
+#endif /* B2500000 */
+#ifndef B3000000
+#define B3000000 3000000
+#endif /* B3000000 */
+#ifndef B3500000
+#define B3500000 3500000
+#endif /* B3500000 */
+#ifndef B4000000
+#define B4000000 4000000
+#endif /* B4000000 */
+#endif /* MACOSHISPEED */
+
 #ifdef __GNUC__
 #ifdef XENIX
 /*
@@ -7408,12 +7456,27 @@ ttvt(speed,flow) long speed; int flow;
     tttvt.c_cc[VMIN] = 0;		/* DR7 can only poll. */
 #endif /* BEOSORBEBOX */
 
+#ifdef MACOSHISPEED
+    if (speed >= MACOSHISPEED_START) {
+	/* Set baudrate to standart one so tcsetattr() will not fail */
+	cfsetospeed(&tttvt,B9600);
+	cfsetispeed(&tttvt,B9600);
+    }
+#endif /* MACOSHISPEED */
+
     x = tcsetattr(ttyfd,TCSADRAIN,&tttvt);
     debug(F101,"ttvt BSD44ORPOSIX tcsetattr","",x);
     if (x < 0) {
 	debug(F101,"ttvt BSD44ORPOSIX tcsetattr errno","",errno);
 	return(-1);
     }
+#ifdef MACOSHISPEED
+    if (speed >= MACOSHISPEED_START) {
+	x = ioctl(ttyfd, IOSSIOSPEED, &speed);
+	debug(F101,"ttvt IOSSIOSPEED","",x);
+	if (x < 0) return(-1);
+    }
+#endif /* MACOSHISPEED */
 #else /* ATTSV */
     x = ioctl(ttyfd,TCSETAW,&tttvt);
     debug(F101,"ttvt ATTSV ioctl TCSETAW","",x);
@@ -7846,9 +7909,23 @@ ttsspd(cps) int cps;
 	cfsetispeed(&tttvt,s2);
 	cfsetospeed(&ttold,s);
 	cfsetispeed(&ttold,s2);
+#ifdef MACOSHISPEED
+	if (s >= MACOSHISPEED_START) {
+	    /* Set baudrate to standart one so tcsetattr() will not fail */
+	    cfsetospeed(&ttcur,B9600);
+	    cfsetispeed(&ttcur,B9600);
+	}
+#endif /* MACOSHISPEED */
 	x = tcsetattr(ttyfd,TCSADRAIN,&ttcur);
 	debug(F101,"ttsspd tcsetattr","",x);
 	if (x < 0) return(-1);
+#ifdef MACOSHISPEED
+	if (s >= MACOSHISPEED_START) {
+	    x = ioctl(ttyfd, IOSSIOSPEED, &s);
+	    debug(F101,"ttsspd IOSSIOSPEED","",x);
+	    if (x < 0) return(-1);
+	}
+#endif /* MACOSHISPEED */
 #else
 #ifdef ATTSV
 	if (cps == 888) return(-1);	/* No split speeds, sorry. */

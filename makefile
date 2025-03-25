@@ -1,8 +1,8 @@
 # makefile / Makefile / ckuker.mak / CKUKER.MAK
 #
-# Thu Aug  8 12:25:04 2024
-BUILDID=20240808
-CKVER= "10.0 Beta.11"
+# Sun Mar 24 13:21:46 2024
+BUILDID=20250322
+CKVER= "10.0 Beta.12"
 #
 # -- Makefile to build C-Kermit for UNIX and UNIX-like platforms --
 #
@@ -614,6 +614,8 @@ CKVER= "10.0 Beta.11"
 #     NOTE: ("make qnx" == "make qnx32")
 # ? for QNX Neutrino 2+, "make qnx_nto2+" (crosscompiled on QNX4 with Watcom C)
 # ? for QNX 6 = Neutrino 2.xx, "make qnx6"
+# + for QNX 8.0 x86_64, "make qnx8i"
+# + for QNX 8.0 ARM64 , "make qnx8a"
 # ? for Ridge 32 (ROS3.2), "make ridge32"
 # ? for Samsung MagicStation, "make sys5r4"
 # ? for SCO Xenix 2.2.1 with development system 2.2 on 8086/8 "make sco86"
@@ -1539,7 +1541,7 @@ ckucns.$(EXT): ckucns.c ckcker.h ckcdeb.h ckcasc.h ckcnet.h ckcsym.h ckctel.h \
 		 ckclib.h ckcxla.h ckuxla.h ckcuni.h ckcfnp.h
 
 ckcnet.$(EXT): ckcnet.c ckcdeb.h ckcker.h ckcnet.h ckcsym.h ckcsig.h ckctel.h \
-		 ckclib.h ckcfnp.h
+		 ckclib.h ckcfnp.h ckuusr.h
 
 ckctel.$(EXT): ckcsym.h ckcdeb.h ckcker.h ckcnet.h ckctel.h ckclib.h ckcfnp.h
 
@@ -1815,10 +1817,13 @@ freebsd freebsd41 freebsd72 freebsd5 freebsd6 freebsd7 freebsd8 freebsd9:
 	then x=`grep deprecated /usr/include/sys/timeb.h | wc -l` ; \
 	if [ $x > 0 ] ; \
 	then NOSYSTIMEBH='' ; fi ; fi ; \
+	if `grep -q "[[:space:]]utimes" /usr/include/sys/time.h` ; \
+	then HAVE_UTIMES='-DHAVE_UTIMES' ; \
+	else HAVE_UTIMES=''; fi; \
 	$(MAKE) CC=$(CC) CC2=$(CC2) xermit KTARGET=$${KTARGET:-$(@)} \
 	"CFLAGS= -DBSD44 -DCK_NCURSES -DCK_NEWTERM -DTCPSOCKET -DNOCOTFMC \
 	-DFREEBSD4 $$HAVE_FBSD8 $$HAVE_FBSD9 -DUSE_UU_LOCK -DFNFLOAT \
-	$$HAVE_UTMPX $$HAVE_WAITH $$NOSYSTIMEBH \
+	$$HAVE_UTMPX $$HAVE_WAITH $$NOSYSTIMEBH $$HAVE_UTIMES \
 	-DHERALD=\"\\\" `uname -rs`\\\"\" \
 	-funsigned-char -DTPUTSARGTYPE=int -DUSE_STRERROR $(KFLAGS) \
 	-O2 -pipe"\
@@ -2236,10 +2241,14 @@ openbsd:
 	if test -f /usr/include/sys/wait.h ; \
 	then HAVE_WAITH='-DHAVEWAITH' ; \
 	else HAVE_WAITH='' ; fi; \
+	if `grep -q "[[:space:]]utimes" /usr/include/sys/time.h` ; \
+	then HAVE_UTIMES='-DHAVE_UTIMES' ; \
+	else HAVE_UTIMES=''; fi; \
 	$(MAKE) CC=$(CC) CC2=$(CC2) xermit KTARGET=$${KTARGET:-$(@)} \
 	"CFLAGS= -DBSD44 -DCK_CURSES -DCK_NEWTERM -DTCPSOCKET -DOPENBSD \
 	$$NOSYSTIMEBH -DHERALD=\"\\\" OpenBSD `uname -r`\\\"\" \
 	-DUSE_UU_LOCK -DFNFLOAT -DUSE_STRERROR $$HAVETERMH $$HAVE_WAITH \
+	$$HAVE_UTIMES \
 	$(KFLAGS) -O" \
 	"LIBS= -lcurses -lutil -lm"
 
@@ -2260,11 +2269,17 @@ openbsd+ssl:
 	then if `grep deprecated /usr/include/sys/timeb.h` ; \
 	then NOSYSTIMEBH='-DNOSYSTIMEBH' ; fi ; \
 	else NOSYSTIMEBH='-DNOSYSTIMEBH' ; fi; \
+	if test -f /usr/include/sys/wait.h ; \
+	then HAVE_WAITH='-DHAVEWAITH' ; \
+	else HAVE_WAITH='' ; fi; \
+	if `grep -q "[[:space:]]utimes" /usr/include/sys/time.h` ; \
+	then HAVE_UTIMES='-DHAVE_UTIMES' ; \
+	else HAVE_UTIMES=''; fi; \
 	$(MAKE) CC=$(CC) CC2=$(CC2) xermit KTARGET=$${KTARGET:-$(@)} \
 	"CFLAGS= -DBSD44 -DCK_CURSES -DCK_NEWTERM -DTCPSOCKET -DOPENBSD \
 	$$NOSYSTIMEBH -DHERALD=\"\\\" OpenBSD `uname -r`\\\"\" \
 	-DUSE_UU_LOCK -DFNFLOAT -DUSE_STRERROR -DCK_AUTHENTICATION \
-	-DCK_SSL $(KFLAGS) -O" \
+	-DCK_SSL $$HAVE_WAITH $$HAVE_UTIMES $(KFLAGS) -O" \
 	"LIBS= -lcurses -lutil -lm -lssl -lcrypto"
 
 mirbsd+ssl:
@@ -2375,7 +2390,7 @@ macosx macosx10 macosx10.3.9 macosx10.4 macosx10.5 macosx10.6:
 	"CFLAGS= -DMACOSX10 -DMACOSX103 -DCK_NCURSES -DTCPSOCKET -DCKHTTP \
 	-DUSE_STRERROR -DUSE_NAMESER_COMPAT -DNOCHECKOVERFLOW -DFNFLOAT \
 	-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 $$HAVE_UTMPX \
-	-funsigned-char -DNODCLINITGROUPS \
+	-funsigned-char -DNODCLINITGROUPS -DMACOSHISPEED \
 	-DNOUUCP -O -DHERALD=\"\\\" $${MACOSNAME} $${MACOSV}\\\"\" \
 	-DCKCPU=\"\\\"$${MACCPU}\\\"\" \
 	$(KFLAGS)" "LIBS= -lncurses -lresolv $(LIBS)"
@@ -8569,7 +8584,41 @@ qnx6:
 	-DTCPSOCKET -DNOGETUSERSHELL -DCK_REDIR -DSELECT -DSELECT_H \
 	-DCK_RTSCTS -DNOJC -DSVORPOSIX -DBSD44ORPOSIX -DNOUUCP -DCK_ANSIC \
 	$(KFLAGS) -O" \
-	"LIBS= -lsocket  -lncurses"
+	"LIBS= -lsocket  -lncurses -llogin"
+
+# QNX 8.0 for Intel (x86_64) crosscompiled build
+qnx8i:
+	@echo 'Making wart for host'
+	$(MAKE) wart
+	@echo 'Making C-Kermit $(CKVER) for QNX8'
+	$(MAKE) xermit KTARGET=QNX6 \
+	"CC = qcc -Vgcc_ntox86_64" \
+	"CC2 = qcc -Vgcc_ntox86_64" \
+	"CFLAGS = -DPOSIX -DCK_POSIX_SIG -DNETPTY -DHAVE_OPENPTY \
+	-DUSE_TIOCSDTR -DBIGBUFOK -DCKMAXOPEN=100 -DRLOGCODE \
+	-DMAXNAMLEN=48 -DQNX6 -DUSE_TERMIO -DINIT_SPTY -DFNFLOAT \
+	-DCK_NCURSES -DCK_WREFRESH -DCK_NEWTERM -DDYNAMIC -DUSE_STRERROR \
+	-DTCPSOCKET -DNOGETUSERSHELL -DCK_REDIR -DSELECT -DSELECT_H \
+	-DCK_RTSCTS -DSVORPOSIX -DBSD44ORPOSIX -DCK_ANSIC \
+	$(KFLAGS) -O" \
+	"LIBS= -lsocket -lncurses -llogin -lm"
+
+# QNX 8.0 for ARM (aarch64le) crosscompiled build
+qnx8a:
+	@echo 'Making wart for host'
+	$(MAKE) wart
+	@echo 'Making C-Kermit $(CKVER) for QNX8'
+	$(MAKE) xermit KTARGET=QNX6 \
+	"CC = qcc -Vgcc_ntoaarch64le" \
+	"CC2 = qcc -Vgcc_ntoaarch64le" \
+	"CFLAGS = -DPOSIX -DCK_POSIX_SIG -DNETPTY -DHAVE_OPENPTY \
+	-DUSE_TIOCSDTR -DBIGBUFOK -DCKMAXOPEN=100 -DRLOGCODE \
+	-DMAXNAMLEN=48 -DQNX6 -DUSE_TERMIO -DINIT_SPTY -DFNFLOAT \
+	-DCK_NCURSES -DCK_WREFRESH -DCK_NEWTERM -DDYNAMIC -DUSE_STRERROR \
+	-DTCPSOCKET -DNOGETUSERSHELL -DCK_REDIR -DSELECT -DSELECT_H \
+	-DCK_RTSCTS -DSVORPOSIX -DBSD44ORPOSIX -DCK_ANSIC \
+	$(KFLAGS) -O" \
+	"LIBS= -lsocket -lncurses -llogin -lm"
 
 #MINIX/2.0 32 Bit version for intel 386+ running the POSIX-compliant MINIX
 # version 2.0 (The definition of fatal avoids a conflict with a symbol by

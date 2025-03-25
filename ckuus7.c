@@ -53,10 +53,10 @@
 #else /* NT */
 #define APIRET ULONG
 #include <windows.h>
-#ifndef NODIAL
+#ifdef CK_TAPI
 #include <tapi.h>
 #include "ckntap.h"
-#endif
+#endif /* CK_TAPI */
 #include "cknwin.h"
 #endif /* NT */
 #include "ckowin.h"
@@ -248,7 +248,12 @@ extern int tn_wait_flg;
 #endif /* TNCODE */
 
 VOID
-slrestor() {
+#ifdef CK_ANSIC
+slrestor(void) 
+#else
+slrestor() 
+#endif /* CK_ANSIC */
+{
 #ifdef CK_AUTHENTICATION
     int x;
     if (sl_auth_saved) {
@@ -293,11 +298,11 @@ slrestor() {
 #endif /* TNCODE */
 #ifdef SSHBUILTIN
     if (sl_ssh_xfw_saved) {
-        ssh_xfw = sl_ssh_xfw;
+        ssh_set_iparam(SSH_IPARAM_XFW, sl_ssh_xfw);
         sl_ssh_xfw_saved = 0;
     }
     if (sl_ssh_ver_saved) {
-        ssh_ver = sl_ssh_ver;
+        ssh_set_iparam(SSH_IPARAM_VER, sl_ssh_ver);
         sl_ssh_ver_saved = 0;
     }
 #endif /* SSHBUILTIN */
@@ -9041,7 +9046,7 @@ cx_net(net, protocol, xhost, svc,
 #endif /* CK_ANSIC */
 /* cx_net */ {
 
-    int i, n, x, msg;
+    int i, n = 1, x, msg;
     int _local = -1;
     int did_ttopen = 0;
 
@@ -9364,7 +9369,7 @@ cx_net(net, protocol, xhost, svc,
 
 #ifdef SSHBUILTIN
         if (net == NET_SSH) {
-            makestr(&ssh_hst,hostname);        /* Stash everything */
+            ssh_set_sparam(SSH_SPARAM_HST, hostname);   /* Stash everything */
             if (username) {
                 if (!sl_uid_saved) {
                     ckstrncpy(sl_uidbuf,uidbuf,UIDBUFLEN);
@@ -9373,33 +9378,35 @@ cx_net(net, protocol, xhost, svc,
                 ckstrncpy(uidbuf,username,UIDBUFLEN);
             }
             if (srvbuf[0]) {
-                makestr(&ssh_prt,srvbuf);
-            } else
-                makestr(&ssh_prt,NULL);
+                ssh_set_sparam(SSH_SPARAM_PRT,srvbuf);
+            } else {
+                ssh_set_sparam(SSH_SPARAM_PRT,NULL);
+            }
 
             if (command) {
-                makestr(&ssh_cmd,brstrip(command));
-                ssh_cas = param2;
-            } else
-                makestr(&ssh_cmd,NULL);
+                ssh_set_sparam(SSH_SPARAM_CMD, brstrip(command));
+                ssh_set_iparam(SSH_IPARAM_CAS, param2);
+            } else {
+                ssh_set_sparam(SSH_SPARAM_CMD, NULL);
+            }
 
             if (param1 > -1) {
 #ifndef SSHTEST
                 if (!sl_ssh_ver_saved) {
-                    sl_ssh_ver = ssh_ver;
+                    sl_ssh_ver = ssh_get_iparam(SSH_IPARAM_VER);
                     sl_ssh_ver_saved = 1;
                 }
 #endif /* SSHTEST */
-                ssh_ver = param1;
+                ssh_set_iparam(SSH_IPARAM_VER, param1);
             }
             if (param3 > -1) {
 #ifndef SSHTEST
                 if (!sl_ssh_xfw_saved) {
-                    sl_ssh_xfw = ssh_xfw;
+                    sl_ssh_xfw = ssh_get_iparam(SSH_IPARAM_XFW);
                     sl_ssh_xfw_saved = 1;
                 }
 #endif /* SSHTEST */
-                ssh_xfw = param3;
+                ssh_set_iparam(SSH_IPARAM_XFW, param3);
             }
         } else                          /* NET_SSH */
 #endif /* SSHBUILTIN */
@@ -9877,6 +9884,14 @@ cx_net(net, protocol, xhost, svc,
 	    slrestor();
 	    makestr(&slmsg,"Network connection failure");
 #ifdef VMS
+        /* 2024-06-08 SMS.  Lame work-around for NONET build problem:
+         * %CC-E-UNDECLARED, In this statement, "socket_errno" is not declared.
+         * socket_errno is defined conditionally in ckcnet.h, but the
+         * condition here is different.
+         */
+#ifndef socket_errno
+#define socket_errno errno      /* Must match definition in ckcnet.h. */
+#endif
 	    if (msg && hints && !xcmdsrc && IS_RLOGIN()) {
 		makestr(&slmsg,"RLOGIN failure");
 		if  (socket_errno == EACCES) {
@@ -11013,7 +11028,30 @@ setlin(xx, zz, fc) int xx, zz, fc;
                         );
         }
 #endif /* NETDLL */
-
+#ifdef CK_NETBIOS
+        if (mynet == NET_BIOS) {
+            /*
+             * TODO:
+             *   "server name, *,\n or carriage return to close an open connection" :
+             *   "server name, *,\n or carriage return to resume an open connection",
+             */
+            x = cx_net(mynet,	/* nettype */
+			   0,		/* protocol (not used) */
+			   line,	/* host */
+			   "",		/* port */
+			   NULL,	/* alternate username */
+			   NULL,	/* password */
+			   NULL,	/* command to execute */
+			   0,		/* param1 */
+			   0,		/* param2 */
+			   0,		/* param3 */
+			   cx,		/* enter CONNECT mode */
+			   sx,		/* enter SERVER mode */
+			   zz,		/* close connection if open */
+			   0		/* gui */
+			   );
+        }
+#endif /* CK_NETBIOS */
 #ifdef NPIPE                            /* Named pipe */
         if (mynet == NET_PIPE) {        /* Needs backslash twiddling */
             if (line[0]) {
@@ -11868,6 +11906,10 @@ z_open(name, flags) char * name; int flags;
     int i, n;
     FILE * t;
     char * mode;
+#ifdef NT
+    char * modetemp;
+    int modelen;
+#endif
     debug(F111,"z_open",name,flags);
     if (!name) name = "";               /* Check name argument */
     if (!name[0])
@@ -11888,6 +11930,18 @@ z_open(name, flags) char * name; int flags;
         if (!mode[0])                   /* Check for illegal combinations */
           return(z_error = FX_BOM);
     }
+
+#ifdef NT
+    /*
+     * Take a copy of the mode string and append the 'S' sequential read file
+     * caching hint (_O_SEQUENTIAL). We'll free this copy after the call to
+     * fopen later.
+     */
+    modetemp = mode;
+    mode = malloc(10);
+    ckmakmsg(mode, 10, modetemp, "S", NULL, NULL);
+#endif /* NT */
+
     if (!z_inited) {                /* If file structs not inited */
         debug(F101,"z_open z_maxchan 1","",z_maxchan);
 #ifdef UNIX
@@ -11998,6 +12052,9 @@ z_open(name, flags) char * name; int flags;
     }
 #endif /* UNIX */
     t = fopen(name, mode);              /* Try to open the file. */
+#ifdef NT
+    free(mode);     /* This is a copy of the original mode string */
+#endif /* NT */
     if (!t) {                           /* Failed... */
         debug(F111,"z_open error",name,errno);
 #ifdef EMFILE
@@ -12008,12 +12065,22 @@ z_open(name, flags) char * name; int flags;
 	z_file[n] = NULL;
         return(z_error = (errno ?  FX_SYS : FX_UNK)); /* Return error code */
     }
+#ifdef COMMENT
+    /*
+     * 2024-08-19 DavidG: This started crashing on Windows 11 in CKW Beta 6. The
+     * call to setmode seems ok, it just doesn't like O_SEQUENTIAL anymore. Not
+     * sure if this is something unsupported now, or if its a bug in the CRT.
+     * For some reason I've not looked into too closely I'm not even getting
+     * O_SEQUENTIAL defined on my local PC, while its clearly there on the
+     * Gitub build agents.
+     */
 #ifdef NT
 #ifdef O_SEQUENTIAL
     if (t)                              /* Caching hint for NT */
       _setmode(_fileno(t),O_SEQUENTIAL);
 #endif /* O_SEQUENTIAL */
 #endif /* NT */
+#endif /* COMMENT */
 
     z_nopen++;                          /* Open, count it. */
     z_file[n]->z_fp = t;		/* Stash the file pointer */
@@ -12170,6 +12237,8 @@ z_in(channel,s,buflen,length,flags)
     if (!z_inited)                      /* Check everything... */
       return(z_error = FX_NOP);
     if (channel >= z_maxchan)
+      return(z_error = FX_CHN);
+    if (channel < 0)
       return(z_error = FX_CHN);
     if (!z_file[channel])
       return(z_error = FX_NOP);
@@ -14612,16 +14681,16 @@ sho_auth(cx) int cx;
             kv = all ? AUTHTYPE_KERBEROS_V5 : 0;
             if (ck_krb4_is_installed()) {
                 printf(" Authentication:      Kerberos 4\n");
-                if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+                if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             } else {
                 printf(" Authentication:      Kerberos 4 (not installed)\n");
-                if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+                if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
                 continue;
             }
 #ifdef CK_KERBEROS
             printf(" Keytab file:         %s\n",
                       k4_keytab ? k4_keytab : "(none)");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             if (krb_action < 0) {
                 p = "(none)";
             } else {
@@ -14633,49 +14702,49 @@ sho_auth(cx) int cx;
                 }
             }
             printf(" Action:              %s\n", p);
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Default lifetime     %d\n",krb4_d_lifetime);
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Lifetime:            %d (minutes)\n",krb4_init.lifetime);
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Default preauth:     %d\n",krb4_d_preauth);
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Preauth:             %d\n",krb4_init.preauth);
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Default principal:   \"%s\"\n",
                     krb4_d_principal ? krb4_d_principal : "");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Principal:           \"%s\"\n",
                     krb4_init.principal ? krb4_init.principal : "");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Default realm:       \"%s\"\n",
                     krb4_d_realm ? krb4_d_realm : "");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Realm:               \"%s\"\n",
                     krb4_init.realm ? krb4_init.realm : "");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Default instance:    \"%s\"\n",
                     krb4_d_instance ? krb4_d_instance : "");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Instance:            \"%s\"\n",
                     krb4_init.instance ? krb4_init.instance : "");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Auto-Get TGTs:       %d\n",krb4_autoget);
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Auto-Destroy TGTs:   %s\n",
                     krb4_autodel==KRB_DEL_NO?"never":
                     krb4_autodel==KRB_DEL_CL?"on-close":"on-exit");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Check IP Addresses:  %d\n",krb4_checkaddrs);
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
 #ifdef COMMENT
             printf(" Password:    \"%s\"\n",
                     krb4_init.password  ? krb4_init.password  : "");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
 #endif /* COMMENT */
 #endif /* CK_KERBEROS */
             printf("\n");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             break;
         case AUTHTYPE_KERBEROS_V5:
             kv = all ? AUTHTYPE_SSL : 0;
@@ -14684,23 +14753,23 @@ sho_auth(cx) int cx;
                     printf(" Authentication:      Kerberos 5 plus GSSAPI\n");
                 else
                     printf(" Authentication:      Kerberos 5\n");
-                if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+                if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             } else {
                 printf(" Authentication:      Kerberos 5 (not installed)\n");
-                if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+                if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
                 continue;
             }
 
 #ifdef CK_KERBEROS
             printf(" Cache file:          %s\n",
                     krb_op.cache ? krb_op.cache : "(none)");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Default cache:       %s\n",
                     krb5_d_cc ? krb5_d_cc : "(none)");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Keytab file:         %s\n",
                       k5_keytab ? k5_keytab : "(none)");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             if (krb_action < 0) {
                 p = "(none)";
             } else  {
@@ -14712,63 +14781,63 @@ sho_auth(cx) int cx;
                 }
             }
             printf(" Action:              %s\n", p);
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
 
             printf(" Default forwardable  %d\n",krb5_d_forwardable);
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Forwardable:         %d\n",krb5_init.forwardable);
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Default lifetime     %d\n",krb5_d_lifetime);
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Lifetime:            %d (minutes)\n",krb5_init.lifetime);
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Postdate:            \"%s\"\n",
                     krb5_init.postdate ? krb5_init.postdate: "");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Default proxiable:   %d\n",krb5_d_proxiable);
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Proxiable:           %d\n",krb5_init.proxiable);
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Renew:               %d\n",krb5_init.renew);
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Default renewable:   %d (minutes)\n",krb5_d_renewable);
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Renewable:           %d (minutes)\n",krb5_init.renewable);
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Service:             \"%s\"\n",
                     krb5_init.service ? krb5_init.service : "");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Validate:            %d\n",krb5_init.validate);
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Default principal:   \"%s\"\n",
                     krb5_d_principal ? krb5_d_principal : "");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Principal:           \"%s\"\n",
                     krb5_init.principal ? krb5_init.principal : "");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Default instance:    \"%s\"\n",
                     krb5_d_instance ? krb5_d_instance : "");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Default realm:       \"%s\"\n",
                     krb5_d_realm ? krb5_d_realm : "");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Realm:               \"%s\"\n",
                     krb5_init.realm ? krb5_init.realm : "");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Auto-Get TGTs:       %d\n",krb5_autoget);
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Auto-Destroy TGTs:   %s\n",
                     krb5_autodel==KRB_DEL_NO?"never":
                     krb5_autodel==KRB_DEL_CL?"on-close":"on-exit");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Default get K4 TGTs: %d\n",krb5_d_getk4);
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Get K4 TGTs: %d\n",krb5_init.getk4);
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Check IP Addresses:  %d\n",krb5_checkaddrs);
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" No IP Addresses:  %d\n",krb5_d_no_addresses);
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" IP-Addresses:        ");
             if (krb5_init.addrs && krb5_init.addrs[0]) {
                 for (i = 0; krb5_init.addrs[i]; i++) {
@@ -14786,15 +14855,15 @@ sho_auth(cx) int cx;
                 printf("(use default)");
             }
             printf("\n");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
 #ifdef COMMENT
             printf(" Password:            \"%s\"\n",
                     krb5_init.password  ? krb5_init.password  : "");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
 #endif /* COMMENT */
 #endif /* CK_KERBEROS */
             printf("\n");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             break;
 #ifdef CK_SSL
           case AUTHTYPE_SSL:
@@ -14802,51 +14871,51 @@ sho_auth(cx) int cx;
             if (ck_ssleay_is_installed()) {
                 printf(" Authentication:      SSL/TLS (%s)\n",
                         SSLeay_version(SSLEAY_VERSION));
-                if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+                if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             } else {
                 printf(" Authentication:      SSL/TLS (not installed)\n");
-                if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+                if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
                 continue;
             }
             printf(" RSA Certs file: %s\n",ssl_rsa_cert_file?
                   ssl_rsa_cert_file:"(none)");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" RSA Certs Chain file: %s\n",ssl_rsa_cert_chain_file?
                   ssl_rsa_cert_chain_file:"(none)");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" RSA Key file: %s\n",ssl_rsa_key_file?
                   ssl_rsa_key_file:"(none)");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" DSA Certs file: %s\n",ssl_dsa_cert_file?
                   ssl_dsa_cert_file:"(none)");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" DSA Certs Chain file: %s\n",ssl_dsa_cert_chain_file?
                   ssl_dsa_cert_chain_file:"(none)");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" DH Key file: %s\n",ssl_dh_key_file?
                   ssl_dh_key_file:"(none)");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" DH Param file: %s\n",ssl_dh_param_file?
                   ssl_dh_param_file:"(none)");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" CRL file: %s\n",ssl_crl_file?
                   ssl_crl_file:"(none)");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" CRL dir: %s\n",ssl_crl_dir?
                     ssl_crl_dir:"(none)");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Random file: %s\n",ssl_rnd_file?
                   ssl_rnd_file:"(none)");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Verify file: %s\n",ssl_verify_file?
                   ssl_verify_file:"(none)");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Verify dir: %s\n",ssl_verify_dir?
                   ssl_verify_dir:"(none)");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Cipher list: %s\n",ssl_cipher_list ? ssl_cipher_list : 
 		    DEFAULT_CIPHER_LIST);
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             if (ssl_con == NULL) {
                 SSL_library_init();
                 ssl_ctx = (SSL_CTX *)
@@ -14864,41 +14933,42 @@ sho_auth(cx) int cx;
                     if (p == NULL)
                       break;
                     printf("    %s\n",p);
-                    if (++n > cmd_rows - 3)
+                    if (++n > cmd_rows - 3) {
                         if (!askmore()) return(0); else n = 0;
+                    }
                 }
             }
             printf(" Certs OK? %s\n",ssl_certsok_flag? "yes" : "no");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Debug mode: %s\n", ssl_debug_flag ? "on" : "off");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Verbose mode: %s\n", ssl_verbose_flag ? "on" : "off");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" Verify mode: %s\n",
                     ssl_verify_flag == SSL_VERIFY_NONE ? "none" :
                     ssl_verify_flag == SSL_VERIFY_PEER ? "peer-cert" :
                     "fail-if-no-peer-cert");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" SSL only? %s\n", ssl_only_flag ? "yes" : "no");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             printf(" TLS only? %s\n", tls_only_flag ? "yes" : "no");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
 #endif /* CK_SSL */
             break;
           case AUTHTYPE_NTLM:
             kv = 0;
             if (ck_ntlm_is_installed()) {
                 printf(" Authentication:      NTLM\n");
-                if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+                if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
                 printf(" No options\n");
-                if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+                if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             } else {
                 printf(" Authentication:      NTLM (not installed)\n");
-                if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+                if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
                 continue;
             }
             printf("\n");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             break;
           case AUTHTYPE_SRP:
             kv = all ? AUTHTYPE_NTLM : 0;
@@ -14907,16 +14977,16 @@ sho_auth(cx) int cx;
                     printf(" Authentication:      SRP plus Krypto API\n");
                 else
                     printf(" Authentication:      SRP\n");
-                if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+                if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
                 printf(" No options\n");
-                if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+                if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             } else {
                 printf(" Authentication:      SRP (not installed)\n");
-                if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+                if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
                 continue;
             }
             printf("\n");
-            if (++n > cmd_rows - 3) if (!askmore()) return(0); else n = 0;
+            if (++n > cmd_rows - 3) { if (!askmore()) return(0); else n = 0; }
             break;
         }
     }

@@ -80,6 +80,9 @@ int sstelnet = 0;                       /* Do server-side Telnet negotiation */
 #include "ckocon.h"
 extern int tt_type, max_tt;
 extern struct tt_info_rec tt_info[];
+#ifdef SSHBUILTIN
+#include "ckossh.h"
+#endif /* SSHBUILTIN */
 #endif /* OS2 */
 #endif /* NOTERM */
 
@@ -243,7 +246,8 @@ extern int cmd_cols, cmd_rows;
 extern char namecopy[];
 extern char myipaddr[];             /* Global copy of my IP address */
 
-
+/* A copy of this function also appears in ck_crp.c for use by Kermit 95s
+ * telnet cryptography DLL (k95crypt.dll) */
 char *
 #ifdef CK_ANSIC
 tel_unk(int opt)                        /* "UNKNOWN-%u" string. */
@@ -1050,6 +1054,9 @@ tn_get_display()
     /* explicitedly requested we try to send one via X-Display Location */
     /* But do not send a string at all if FORWARD_X is in use.          */
 
+    /* Note that in Kermit 95 this is also used for X11 forwarding      */
+    /* over SSH                                                         */
+
     /* if (!IS_TELNET()) return(0); */
 
     debug(F110,"tn_get_display() myipaddr",myipaddr,0);
@@ -1072,8 +1079,14 @@ tn_get_display()
     }
     else
 #endif /* CK_ENVIRONMENT */
-        if (TELOPT_ME(TELOPT_XDISPLOC) ||
-              TELOPT_U(TELOPT_FORWARD_X)) {
+        if ((TELOPT_ME(TELOPT_XDISPLOC) ||
+              TELOPT_U(TELOPT_FORWARD_X))
+#if OS2
+#ifdef SSHBUILTIN
+            || (IS_SSH() && ssh_get_iparam(SSH_IPARAM_XFW))
+#endif   /* SSHBUILTIN */
+#endif   /* OS2 */
+              ) {
         ckmakmsg(tmploc,256,myipaddr,":0.0",NULL,NULL);
         disp = tmploc;
     }
@@ -1095,6 +1108,10 @@ static Xauth *real_xauth=NULL;
 #define UNIX_CONNECTION "unix"
 #define UNIX_CONNECTION_LENGTH 4
 #endif
+
+#endif /* CK_FORWARD_X */
+
+#ifdef CK_FWDX_PARSE_DISPN
 
 /*
  * private utility routines
@@ -1176,6 +1193,10 @@ copyhostname ()
 }
 #endif
 
+/*
+ * Parse X11 display name. This is used by both Telnet X11 forwarding,
+ * and on Kermit 95, X11 forwarding over SSH.
+ */
 
 int
 #ifdef CK_ANSIC
@@ -1324,6 +1345,9 @@ fwdx_parse_displayname (displayname, familyp, hostp, dpynump, scrnump, restp)
     return 1;
 }
 
+#endif /* CK_FWDX_PARSE_DISPN */
+
+#ifdef CK_FORWARD_X
 
 int
 #ifdef CK_ANSIC
@@ -1531,7 +1555,7 @@ fwdx_send_xauth_to_xserver(channel, data, len)
             else if (family == FamilyInternet) {
                 /* call with address = 4 bytes numeric ip addr (MSB) */
                 struct hostent *hi;
-                if (hi = gethostbyname(host))
+                if ((hi = gethostbyname(host)))
                     real_xauth = XauGetAuthByAddr(family, 4,
                                                   hi->h_addr, strlen(disp_no),
                                                   disp_no, 0, NULL);
@@ -2094,7 +2118,7 @@ fwdx_send_xauth(void)
         else if (family == FamilyInternet) {
             /* call with address = 4 bytes numeric ip addr (MSB) */
             struct hostent *hi;
-            if (hi = gethostbyname(host))
+            if ((hi = gethostbyname(host)))
                 real_xauth = XauGetAuthByAddr(family, 4,
                                               hi->h_addr,
                                               strlen(disp_no),

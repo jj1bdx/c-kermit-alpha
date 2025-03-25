@@ -5113,7 +5113,12 @@ zstrdt(date,len) char * date; int len;
     time_t tmx;
     long days;
 #else
+#ifdef LINUX
+    time_t tmx;
+    long days;
+#else
     long tmx, days;
+#endif /* LINUX */
 #endif /* BSD44 */
 #endif /* HPUX10 */
     int i, n, isleapyear;
@@ -5403,7 +5408,12 @@ zlocaltime(gmtstring) char * gmtstring;
     time_t tmx;
     long days;
 #else
+#ifdef LINUX
+    time_t tmx;
+    long days;
+#else
     long tmx, days;
+#endif /* LINUX */
 #endif /* BSD44 */
 #endif /* HPUX10 */
     int i, n, x, isleapyear;
@@ -5616,7 +5626,9 @@ zstime(f,yy,x) char *f; struct zattr *yy; int x;
 #ifdef TIMESTAMP
 #ifdef BSD44
 #ifndef __APPLE__
+#ifndef HAVE_UTIMES
     extern int utimes();
+#endif /* HAVE_UTIMES */
 #endif /* __APPLE__ */
 #endif /* BSD44 */
 
