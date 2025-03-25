@@ -120,6 +120,7 @@ _PROTOTYP(int ck_tn_decrypting, (VOID));
 #ifdef CK_SSL
 _PROTOTYP(int ck_tn_tls_negotiate, (VOID));
 _PROTOTYP(int SendSSLAuthSB, (int, void *, int));
+_PROTOTYP(int tls_is_anon, (int x));
 #endif /* CK_SSL */
 
 #ifdef CK_KERBEROS
@@ -223,15 +224,22 @@ _PROTOTYP(int krb5_u2u_read, (int,char *,int));
 _PROTOTYP(int k5_user_to_user_server_auth,(VOID));
 _PROTOTYP(int k5_user_to_user_client_auth,(VOID));
 
-#ifdef MACOSX
 #ifdef KRB5
 #include <krb5/krb5.h>
+_PROTOTYP(krb5_error_code krb5_get_in_tkt_with_password,(krb5_context context, krb5_flags options, krb5_address *const *addrs, krb5_enctype *ktypes, krb5_preauthtype *pre_auth_types, const char *password, krb5_ccache ccache, krb5_creds *creds, krb5_kdc_rep **ret_as_reply));
+#ifdef CK_ENCRYPTION
+_PROTOTYP(krb5_error_code krb5_auth_con_getlocalsubkey,(krb5_context context, krb5_auth_context auth_context, krb5_keyblock **keyblock));
+_PROTOTYP(krb5_error_code krb5_auth_con_getremotesubkey,(krb5_context context, krb5_auth_context auth_context, krb5_keyblock **keyblock));
+#endif /* CK_ENCRYPTION */
+#ifdef KRB5_U2U
 _PROTOTYP(int k5_u2u_read_msg,(krb5_context context, int fd, krb5_data * msg));
 _PROTOTYP(int k5_u2u_write_msg,(krb5_context context, int fd, krb5_data * msgtext));
+#endif /* KRB5_U2U */
+#ifdef MACOSX
 _PROTOTYP(krb5_error_code ck_krb5_write_message,(krb5_context con, krb5_pointer ptr, krb5_data *data));
 _PROTOTYP(krb5_error_code ck_krb5_read_message, (krb5_context context, krb5_pointer ptr, krb5_data * data));
-#endif KRB5 /* KRB5 */
 #endif MACOSX /* MACOSX */
+#endif /* KRB5 */
 
 #endif /* CK_KERBEROS */
 

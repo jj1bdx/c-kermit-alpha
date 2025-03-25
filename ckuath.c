@@ -9041,7 +9041,7 @@ one_addr(a) krb5_address *a;
 #endif
 {
     struct hostent *h;
-    extern tcp_rdns;
+    extern int tcp_rdns;
 
     if ((a->addrtype == ADDRTYPE_INET) &&
         (a->length == 4)) {
@@ -12520,7 +12520,8 @@ k5_user_to_user_client_auth()
         return(-1);
     }
 
-    if (k5_u2u_read_msg(k5_context,&msg) < 0)
+    // TODO: is ttyfd correct?
+    if (k5_u2u_read_msg(k5_context, ttyfd,  &msg) < 0)
         return(-1);
 
     if ( strcmp("Kermit implements Kerberos 5 User to User",msg.data) )
@@ -12530,7 +12531,8 @@ k5_user_to_user_client_auth()
     msgtext.data = "As do I! :-)";
     msgtext.length = strlen(msgtext.data)+1;
 
-    if (k5_u2u_write_msg(k5_context,&msgtext) < 0)
+    // TODO: is ttyfd correct?
+    if (k5_u2u_write_msg(k5_context, ttyfd, &msgtext) < 0)
         return(-1);
 
     if (retval = krb5_unparse_name(k5_context,
@@ -12655,10 +12657,12 @@ k5_user_to_user_server_auth()
     msgtext.data = "Kermit implements Kerberos 5 User to User";
     msgtext.length = strlen(msgtext.data)+1;
 
-    if (k5_u2u_write_msg(k5_context,&msgtext) < 0)
+    // TODO: is ttyfd correct?
+    if (k5_u2u_write_msg(k5_context, ttyfd, &msgtext) < 0)
         return(-1);
 
-    if (k5_u2u_read_msg(k5_context,&msg) < 0)
+    // TODO: is ttyfd correct?
+    if (k5_u2u_read_msg(k5_context, ttyfd, &msg) < 0)
         return(-1);
 
     if ( strcmp("As do I! :-)",msg.data) )

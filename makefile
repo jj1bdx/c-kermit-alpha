@@ -2525,7 +2525,7 @@ macos+krb5+ssl macos+krb5+openssl:
 	$${K5INC} $${SSLINC} \
 	-funsigned-char -O $(KFLAGS)" \
 	"LIBS= $$HAVE_KRB5CONFIG $${SSLLIB} \
--lssl -lcrypto -lpam -lncurses $(LIBS)"
+-lssl -lcrypto -lpam -lncurses -lresolv $(LIBS)"
 
 # End of Mac OS X Section
 
